@@ -1,10 +1,12 @@
-// Player de música no estilo do Spotify: fundo em degradê com a cor da capa,
-// capa grande, título e artista fortes, barra de progresso com bolinha, botão
-// de play branco e redondo e os botões extras do próprio player (no Spotify:
-// curtir, aleatório, repetir), com os ícones dele.
+// Player de música no estilo do Spotify / CarPlay:
+// - a capa, bem desfocada, vira o fundo do card inteiro;
+// - a capa nítida fica à esquerda, com o título e o artista centralizados ao lado;
+// - embaixo, a barra de progresso com bolinha e os botões (play branco e
+//   redondo). Dos lados, os botões do próprio player (curtir, aleatório) ou,
+//   no modo compacto (tela dividida), o volume.
 
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { type LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -20,13 +22,13 @@ import {
   tintFromArtwork,
 } from '../lib/nowPlaying';
 import {
-  MinusIcon,
   MusicIcon,
   NextIcon,
   PauseIcon,
   PlayIcon,
-  PlusIcon,
   PreviousIcon,
+  VolumeDownIcon,
+  VolumeUpIcon,
 } from './icons';
 import { Touch } from './Touch';
 
@@ -41,11 +43,9 @@ type Props = {
   compact?: boolean;
 };
 
-/** Fundo base do player (o mesmo cinza-quase-preto do Spotify). */
-const BASE = '#121212';
 const PAD = 20;
 /** Altura do bloco de baixo: progresso + botões. */
-const BOTTOM_BLOCK = 128;
+const BOTTOM_BLOCK = 118;
 
 export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPlayer, compact }: Props) {
   const np = media.nowPlaying;
@@ -67,7 +67,7 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
     action = { label: 'Ativar', onPress: media.openAccessSettings };
   } else if (!np || (!np.title && !np.artist)) {
     title = 'Nada tocando';
-    subtitle = defaultPlayerName ? `Abra o ${defaultPlayerName} e escolha uma música` : 'Abra um app de música';
+    subtitle = defaultPlayerName ? `Escolha uma música no ${defaultPlayerName}` : 'Abra um app de música';
     if (defaultPlayerName) action = { label: `Abrir ${defaultPlayerName}`, onPress: onOpenPlayer };
   } else {
     title = np.title || np.album || np.appName;
@@ -75,25 +75,36 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
   }
 
   const hasTrack = !!np && (!!np.title || !!np.artist);
-  const tint = tintFromArtwork(np?.artworkColor ?? null, '#2A3550');
+  const artUri = np?.artworkRemoteUri ?? np?.artworkUri ?? null;
   const playerName = np?.appName ?? defaultPlayerName ?? 'Música';
+  const tint = tintFromArtwork(np?.artworkColor ?? null, '#26324D');
 
-  // Capa: o maior quadrado que cabe ao lado do texto, sem empurrar os botões.
+  // Capa: o maior quadrado que cabe em cima dos botões, deixando espaço pro texto.
   const art = Math.max(
-    96,
-    Math.min(box.w * (compact ? 0.42 : 0.4), box.h - PAD * 2 - BOTTOM_BLOCK - 12, 240),
+    90,
+    Math.min(box.h - PAD * 2 - BOTTOM_BLOCK - 10, box.w * (compact ? 0.4 : 0.42), 250),
   );
 
-  // Botões extras do player: um de cada lado do bloco central.
   const [leftAction, rightAction] = pickSideActions(np?.customActions ?? []);
 
   return (
     <View style={styles.card} onLayout={onLayout}>
-      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+      {/* Fundo: a capa desfocada (ou um degradê com a cor padrão) */}
+      {artUri ? (
+        <Image
+          source={artUri}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          blurRadius={60}
+          transition={400}
+          cachePolicy={np?.artworkRemoteUri ? 'memory-disk' : 'none'}
+        />
+      ) : null}
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
         <Defs>
-          <LinearGradient id="np-bg" x1="0" y1="0" x2="0.35" y2="1">
-            <Stop offset="0" stopColor={tint} />
-            <Stop offset="0.85" stopColor={BASE} />
+          <LinearGradient id="np-bg" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={artUri ? '#000' : tint} stopOpacity={artUri ? 0.25 : 1} />
+            <Stop offset="1" stopColor={artUri ? '#000' : '#101010'} stopOpacity={artUri ? 0.7 : 1} />
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#np-bg)" />
@@ -101,80 +112,63 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
 
       <View style={styles.content}>
         <View style={styles.top}>
-          {/* Capa (tocar abre o player) */}
+          {/* Capa nítida (tocar abre o player) */}
           <Touch onPress={onOpenPlayer} accessibilityLabel={`Abrir o ${playerName}`}>
             <View style={[styles.art, { width: art, height: art }]}>
-              {np?.artworkUri || np?.artworkRemoteUri ? (
+              {artUri ? (
                 <Image
-                  // A capa em alta vem do link; a do arquivo aparece enquanto carrega.
-                  source={np.artworkRemoteUri ?? np.artworkUri}
-                  placeholder={np.artworkRemoteUri ? np.artworkUri : undefined}
+                  source={artUri}
+                  placeholder={np?.artworkRemoteUri ? np.artworkUri : undefined}
                   style={StyleSheet.absoluteFill}
                   contentFit="cover"
                   transition={250}
-                  cachePolicy={np.artworkRemoteUri ? 'memory-disk' : 'none'}
+                  cachePolicy={np?.artworkRemoteUri ? 'memory-disk' : 'none'}
                 />
               ) : (
                 <View style={styles.artEmpty}>
-                  <MusicIcon size={art * 0.42} color="rgba(255,255,255,0.35)" />
+                  <MusicIcon size={art * 0.4} color="rgba(255,255,255,0.4)" />
                 </View>
               )}
             </View>
           </Touch>
 
-          {/* Player, título e artista */}
+          {/* Player, título e artista, centralizados com a capa */}
           <View style={styles.info}>
-            <View style={styles.infoTop}>
-              <View style={styles.source}>
-                {playerIcon ? (
-                  <Image source={playerIcon} style={styles.sourceIcon} contentFit="contain" />
-                ) : (
-                  <MusicIcon size={18} color={colors.text2} />
-                )}
-                {!compact && (
-                  <Text style={font(12, '700', colors.text2)} numberOfLines={1} allowFontScaling={false}>
-                    {playerName.toUpperCase()}
-                  </Text>
-                )}
-              </View>
-              <VolumePill media={media} />
-            </View>
-
-            <View style={styles.titles}>
-              <Text
-                style={font(compact ? 22 : 27, '800')}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-                allowFontScaling={false}
-              >
-                {title}
-              </Text>
-              <Text
-                style={[font(compact ? 16 : 18, '500', colors.text2), styles.subtitle]}
-                numberOfLines={1}
-                allowFontScaling={false}
-              >
-                {subtitle}
-              </Text>
-              {action && (
-                <Touch onPress={action.onPress} accessibilityLabel={action.label} style={styles.actionButton}>
-                  <Text style={font(15, '800', '#000')} allowFontScaling={false}>
-                    {action.label}
-                  </Text>
-                </Touch>
+            <View style={styles.source}>
+              {playerIcon ? (
+                <Image source={playerIcon} style={styles.sourceIcon} contentFit="contain" />
+              ) : (
+                <MusicIcon size={16} color={colors.text2} />
               )}
+              <Text style={font(11, '700', colors.text2)} numberOfLines={1} allowFontScaling={false}>
+                {compact ? playerName.toUpperCase() : `TOCANDO NO ${playerName.toUpperCase()}`}
+              </Text>
             </View>
+            <Text
+              style={font(compact ? 22 : 28, '800')}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              allowFontScaling={false}
+            >
+              {title}
+            </Text>
+            <Text style={font(compact ? 16 : 18, '600', colors.text2)} numberOfLines={1} allowFontScaling={false}>
+              {subtitle}
+            </Text>
+            {action && (
+              <Touch onPress={action.onPress} accessibilityLabel={action.label} style={styles.actionButton}>
+                <Text style={font(15, '800', '#000')} allowFontScaling={false}>
+                  {action.label}
+                </Text>
+              </Touch>
+            )}
           </View>
         </View>
 
         {/* Progresso */}
         <View style={styles.progressBlock}>
-          {hasTrack && np ? (
-            <ProgressBar ratio={progressRatio(np, now)} />
-          ) : (
-            <View style={styles.progressTrack} />
-          )}
+          <ProgressBar ratio={hasTrack && np ? progressRatio(np, now) : 0} visible={hasTrack} />
           <View style={styles.times}>
             <Text style={[font(12, '600', colors.text2), tabular]} allowFontScaling={false}>
               {hasTrack && np && np.durationMs > 0 ? formatTrackTime(currentPositionMs(np, now)) : ' '}
@@ -187,32 +181,34 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
 
         {/* Controles */}
         <View style={styles.controls}>
-          <ActionButton action={leftAction} onPress={media.sendAction} />
-          <Touch
-            onPress={media.previous}
-            disabled={!media.available}
-            accessibilityLabel="Música anterior"
-            style={styles.sideButton}
-          >
-            <PreviousIcon size={38} color={colors.text} />
-          </Touch>
+          {compact ? (
+            <SideButton onPress={media.volumeDown} label="Diminuir volume" disabled={!media.available}>
+              <VolumeDownIcon size={28} color={colors.text} />
+            </SideButton>
+          ) : (
+            <ActionButton action={leftAction} onPress={media.sendAction} />
+          )}
+          <SideButton onPress={media.previous} label="Música anterior" disabled={!media.available}>
+            <PreviousIcon size={36} color={colors.text} />
+          </SideButton>
           <Touch
             onPress={media.playPause}
             disabled={!media.available}
             accessibilityLabel={media.playing ? 'Pausar' : 'Tocar'}
             style={styles.playButton}
           >
-            {media.playing ? <PauseIcon size={34} color="#000" /> : <PlayIcon size={36} color="#000" />}
+            {media.playing ? <PauseIcon size={32} color="#000" /> : <PlayIcon size={34} color="#000" />}
           </Touch>
-          <Touch
-            onPress={media.next}
-            disabled={!media.available}
-            accessibilityLabel="Próxima música"
-            style={styles.sideButton}
-          >
-            <NextIcon size={38} color={colors.text} />
-          </Touch>
-          <ActionButton action={rightAction} onPress={media.sendAction} />
+          <SideButton onPress={media.next} label="Próxima música" disabled={!media.available}>
+            <NextIcon size={36} color={colors.text} />
+          </SideButton>
+          {compact ? (
+            <SideButton onPress={media.volumeUp} label="Aumentar volume" disabled={!media.available}>
+              <VolumeUpIcon size={28} color={colors.text} />
+            </SideButton>
+          ) : (
+            <ActionButton action={rightAction} onPress={media.sendAction} />
+          )}
         </View>
       </View>
     </View>
@@ -237,15 +233,33 @@ function pickSideActions(actions: PlayerAction[]): [PlayerAction | null, PlayerA
   return [left, shuffle ?? null];
 }
 
+function SideButton({
+  onPress,
+  label,
+  disabled,
+  children,
+}: {
+  onPress: () => void;
+  label: string;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Touch onPress={onPress} disabled={disabled} accessibilityLabel={label} style={styles.sideButton}>
+      {children}
+    </Touch>
+  );
+}
+
 /** Botão extra do player (ícone do próprio app) ou um espaço vazio do mesmo tamanho. */
 function ActionButton({ action, onPress }: { action: PlayerAction | null; onPress: (a: string) => void }) {
-  if (!action) return <View style={styles.extraButton} />;
+  if (!action) return <View style={styles.sideButton} />;
   return (
-    <Touch onPress={() => onPress(action.action)} accessibilityLabel={action.name} style={styles.extraButton}>
+    <Touch onPress={() => onPress(action.action)} accessibilityLabel={action.name} style={styles.sideButton}>
       {action.iconUri ? (
         <Image source={action.iconUri} style={styles.extraIcon} contentFit="contain" transition={0} />
       ) : (
-        <Text style={font(11, '700', colors.text2)} numberOfLines={2} allowFontScaling={false}>
+        <Text style={[font(11, '700', colors.text2), styles.extraText]} numberOfLines={2} allowFontScaling={false}>
           {action.name}
         </Text>
       )}
@@ -253,40 +267,16 @@ function ActionButton({ action, onPress }: { action: PlayerAction | null; onPres
   );
 }
 
-function ProgressBar({ ratio }: { ratio: number }) {
+function ProgressBar({ ratio, visible }: { ratio: number; visible: boolean }) {
   const pct = `${Math.max(0, Math.min(1, ratio)) * 100}%` as const;
   return (
     <View style={styles.progressTrack}>
-      <View style={[styles.progressFill, { width: pct }]} />
-      <View style={[styles.knob, { left: pct }]} />
-    </View>
-  );
-}
-
-function VolumePill({ media }: { media: MediaState }) {
-  return (
-    <View style={styles.volume}>
-      <Touch
-        onPress={media.volumeDown}
-        disabled={!media.available}
-        accessibilityLabel="Diminuir volume"
-        visualSize={42}
-        style={styles.volumeButton}
-      >
-        <MinusIcon size={20} color={colors.text} />
-      </Touch>
-      <Text style={[font(14, '700'), tabular, styles.volumeText]} allowFontScaling={false}>
-        {media.available ? media.volume.current : '–'}
-      </Text>
-      <Touch
-        onPress={media.volumeUp}
-        disabled={!media.available}
-        accessibilityLabel="Aumentar volume"
-        visualSize={42}
-        style={styles.volumeButton}
-      >
-        <PlusIcon size={20} color={colors.text} />
-      </Touch>
+      {visible && (
+        <>
+          <View style={[styles.progressFill, { width: pct }]} />
+          <View style={[styles.knob, { left: pct }]} />
+        </>
+      )}
     </View>
   );
 }
@@ -296,7 +286,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: sizes.cardRadius,
     overflow: 'hidden',
-    backgroundColor: BASE,
+    backgroundColor: '#121212',
   },
   content: {
     flex: 1,
@@ -305,18 +295,18 @@ const styles = StyleSheet.create({
   top: {
     flex: 1,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 18,
   },
   art: {
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: 'rgba(255,255,255,0.08)',
-    // Sombra (Android usa elevation)
-    elevation: 12,
+    elevation: 14,
     shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
   },
   artEmpty: {
     flex: 1,
@@ -325,34 +315,23 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    justifyContent: 'space-between',
-  },
-  infoTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 4,
   },
   source: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    flexShrink: 1,
+    gap: 7,
+    marginBottom: 4,
   },
   sourceIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-  },
-  titles: {
-    justifyContent: 'flex-end',
-  },
-  subtitle: {
-    marginTop: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
   actionButton: {
     alignSelf: 'flex-start',
-    marginTop: 12,
+    marginTop: 10,
     minHeight: 46,
     paddingHorizontal: 22,
     borderRadius: 23,
@@ -360,30 +339,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  volume: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 22,
-  },
-  volumeButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  volumeText: {
-    minWidth: 20,
-    textAlign: 'center',
-  },
   progressBlock: {
-    marginTop: 16,
+    marginTop: 14,
   },
   progressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.28)',
     justifyContent: 'center',
   },
   progressFill: {
@@ -411,9 +373,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 4,
   },
-  extraButton: {
+  sideButton: {
     width: sizes.minTouch,
     height: sizes.minTouch,
     borderRadius: sizes.minTouch / 2,
@@ -421,20 +383,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   extraIcon: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
   },
-  sideButton: {
-    width: sizes.minTouch + 4,
-    height: sizes.minTouch + 4,
-    borderRadius: (sizes.minTouch + 4) / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+  extraText: {
+    textAlign: 'center',
   },
   playButton: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: colors.text,
     alignItems: 'center',
     justifyContent: 'center',

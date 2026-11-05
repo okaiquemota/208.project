@@ -1,194 +1,162 @@
-// Cards do "painel de instrumentos", na coluna ao lado do player:
-// - SpeedCard: velocímetro em anel, direção e status do GPS;
-// - TripCard: distância, tempo, média e máxima (segure para zerar).
+// Widgets da coluna ao lado do player, com cara de painel de carro:
+// - SpeedWidget: velocidade grande, barra de "LEDs", bússola e sinal do GPS;
+// - TripWidget: distância, tempo, média e máxima com ícones (segure para zerar);
+// - VolumeWidget: volume da música com barra em degraus.
 
 import { useEffect, useRef, useState } from 'react';
-import { type LayoutChangeEvent, StyleSheet, Text, Vibration, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { StyleSheet, Text, Vibration, View } from 'react-native';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { colors, font, SPEED_ALERT_KMH, SPEED_MAX_KMH, sizes, tabular } from '../config/theme';
-import type { GpsState, GpsStatus } from '../hooks/useGps';
+import type { GpsState } from '../hooks/useGps';
+import type { MediaState } from '../hooks/useMedia';
 import { formatDuration, formatKm, formatKmh } from '../lib/format';
-import { describeArc, GAUGE_END_DEG, GAUGE_START_DEG, speedToAngle } from '../lib/gauge';
 import { toCardinal } from '../lib/geo';
-import { averageKmh, DEFAULT_RULES } from '../lib/trip';
-import { NavArrowIcon } from './icons';
+import { averageKmh } from '../lib/trip';
+import { gpsSignalBars, speedLeds, volumeSegments } from '../lib/widgets';
+import {
+  ClockIcon,
+  GaugeIcon,
+  NavArrowIcon,
+  PeakIcon,
+  RouteIcon,
+  SignalBars,
+  VolumeDownIcon,
+  VolumeUpIcon,
+} from './icons';
 import { Touch } from './Touch';
 
-/** Card do velocímetro: direção, status do GPS e o anel com a velocidade. */
-export function SpeedCard({ gps }: { gps: GpsState }) {
+// ---------- Velocidade ----------
+
+const LED_COUNT = 24;
+
+export function SpeedWidget({ gps }: { gps: GpsState }) {
+  const { status, trip } = gps;
+  const live = status === 'ok';
+  const speed = live ? trip.speedKmh : null;
+  const alert = speed !== null && speed > SPEED_ALERT_KMH;
+  const heading = trip.headingDeg;
+  const leds = speedLeds(speed, SPEED_MAX_KMH, SPEED_ALERT_KMH, LED_COUNT);
+  const glow = alert ? colors.red : colors.accent;
+
   return (
     <View style={styles.card}>
-      <GaugeArea gps={gps} />
-    </View>
-  );
-}
+      {/* Brilho suave atrás do número */}
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
+        <Defs>
+          <RadialGradient id="speed-glow" cx="30%" cy="55%" r="70%">
+            <Stop offset="0" stopColor={glow} stopOpacity={live ? 0.28 : 0.08} />
+            <Stop offset="1" stopColor={glow} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#speed-glow)" />
+      </Svg>
 
-/** Card da viagem: distância, tempo, média e máxima (segure para zerar). */
-export function TripCard({ gps }: { gps: GpsState }) {
-  return (
-    <View style={[styles.card, styles.tripCard]}>
-      <TripStats gps={gps} />
-    </View>
-  );
-}
-
-// ---------- Velocímetro ----------
-
-function gpsLabel(status: GpsStatus, accuracyM: number | null): { text: string; color: string } {
-  switch (status) {
-    case 'ok': {
-      const acc = accuracyM === null ? '' : ` ±${Math.round(accuracyM)} m`;
-      return accuracyM !== null && accuracyM > DEFAULT_RULES.maxAccuracyM
-        ? { text: `GPS fraco${acc}`, color: colors.orange }
-        : { text: `GPS${acc}`, color: colors.text2 };
-    }
-    case 'procurando':
-      return { text: 'Procurando GPS…', color: colors.text2 };
-    case 'iniciando':
-      return { text: 'Iniciando GPS…', color: colors.text2 };
-    case 'desligado':
-      return { text: 'GPS desligado', color: colors.red };
-    case 'sem-permissao':
-      return { text: 'Sem permissão', color: colors.red };
-  }
-}
-
-function GaugeArea({ gps }: { gps: GpsState }) {
-  const [box, setBox] = useState({ w: 0, h: 0 });
-  const onLayout = (e: LayoutChangeEvent) =>
-    setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
-
-  const { status, trip } = gps;
-  const label = gpsLabel(status, gps.accuracyM);
-  const heading = trip.headingDeg;
-
-  return (
-    <View style={styles.gaugeArea}>
-      {/* Direção e GPS */}
-      <View style={styles.headerRow}>
-        {heading !== null && status === 'ok' ? (
-          <View style={styles.directionChip}>
-            <NavArrowIcon size={18} color={colors.accentSoft} rotation={heading} />
-            <Text style={font(17, '800')} allowFontScaling={false}>
+      <View style={styles.speedHeader}>
+        {live && heading !== null ? (
+          <View style={styles.compass}>
+            <NavArrowIcon size={16} color={colors.accentSoft} rotation={heading} />
+            <Text style={font(15, '800')} allowFontScaling={false}>
               {toCardinal(heading)}
             </Text>
           </View>
-        ) : null}
-        <View style={[styles.dot, { backgroundColor: label.color }]} />
-        <Text style={[font(13, '600', label.color), tabular]} numberOfLines={1} allowFontScaling={false}>
-          {label.text}
-        </Text>
-      </View>
-
-      <View style={styles.gaugeBox} onLayout={onLayout}>
-        {status === 'sem-permissao' ? (
-          <Notice
-            title="Sem acesso à localização"
-            body="O GPS mostra a velocidade e os dados da viagem."
-            action={gps.canAskAgain ? 'Permitir localização' : 'Abrir configurações'}
-            onAction={gps.requestPermission}
-          />
-        ) : status === 'desligado' ? (
-          <Notice
-            title="GPS desligado"
-            body="Ligue a localização do celular."
-            action="Ligar localização"
-            onAction={gps.openLocationSettings}
-          />
         ) : (
-          <Ring
-            size={Math.floor(Math.min(box.w, box.h))}
-            speedKmh={status === 'ok' ? trip.speedKmh : null}
-          />
+          <Text style={font(13, '700', colors.text2)} allowFontScaling={false}>
+            VELOCIDADE
+          </Text>
         )}
+        <GpsStatus gps={gps} />
       </View>
+
+      {status === 'sem-permissao' ? (
+        <Notice
+          text="Permita a localização para ver a velocidade"
+          action={gps.canAskAgain ? 'Permitir' : 'Configurações'}
+          onAction={gps.requestPermission}
+        />
+      ) : status === 'desligado' ? (
+        <Notice text="GPS desligado" action="Ligar" onAction={gps.openLocationSettings} />
+      ) : (
+        <>
+          <View style={styles.speedRow}>
+            <Text
+              style={[
+                font(68, '800', speed === null ? colors.text3 : alert ? colors.red : colors.text),
+                tabular,
+                styles.speedNumber,
+              ]}
+              allowFontScaling={false}
+            >
+              {speed === null ? '--' : formatKmh(speed)}
+            </Text>
+            <Text style={font(17, '700', colors.text2)} allowFontScaling={false}>
+              km/h
+            </Text>
+          </View>
+          <View style={styles.leds}>
+            {leds.map((led, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.led,
+                  {
+                    backgroundColor: led.on ? (led.alert ? ledAlertColor(i) : ledColor(i)) : colors.fill,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </>
+      )}
     </View>
   );
 }
 
-function Ring({ size, speedKmh }: { size: number; speedKmh: number | null }) {
-  if (size <= 0) return null;
-  const stroke = Math.max(10, size * 0.06);
-  const c = size / 2;
-  const r = size / 2 - stroke / 2 - 2;
-  const value = speedKmh ?? 0;
-  const alert = speedKmh !== null && value > SPEED_ALERT_KMH;
-  const angle = speedToAngle(value, SPEED_MAX_KMH);
-  const alertStart = speedToAngle(SPEED_ALERT_KMH, SPEED_MAX_KMH);
-  const numberSize = Math.round(size * 0.3);
+/** Degradê dos LEDs: azul → ciano até 120; laranja → vermelho depois. */
+const ledColor = (i: number) => (i < LED_COUNT * 0.3 ? colors.accent : colors.accentSoft);
+const ledAlertColor = (i: number) => (i < LED_COUNT * 0.8 ? colors.orange : colors.red);
 
+function GpsStatus({ gps }: { gps: GpsState }) {
+  let text: string;
+  let color: string = colors.text2;
+  switch (gps.status) {
+    case 'ok':
+      text = gps.accuracyM === null ? 'GPS' : `±${Math.round(gps.accuracyM)} m`;
+      break;
+    case 'procurando':
+      text = 'Procurando…';
+      break;
+    case 'iniciando':
+      text = 'Iniciando…';
+      break;
+    case 'desligado':
+      text = 'Desligado';
+      color = colors.red;
+      break;
+    case 'sem-permissao':
+      text = 'Sem permissão';
+      color = colors.red;
+      break;
+  }
+  const bars = gps.status === 'ok' ? gpsSignalBars(gps.accuracyM) : 0;
   return (
-    <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
-        <Defs>
-          <LinearGradient id="ring" x1="0" y1="1" x2="1" y2="0">
-            <Stop offset="0" stopColor={alert ? colors.orange : colors.accent} />
-            <Stop offset="1" stopColor={alert ? colors.red : colors.accentSoft} />
-          </LinearGradient>
-        </Defs>
-        <Path
-          d={describeArc(c, c, r, GAUGE_START_DEG, GAUGE_END_DEG)}
-          stroke={colors.fill}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Trecho acima de 120 marcado de leve no trilho */}
-        <Path
-          d={describeArc(c, c, r, alertStart, GAUGE_END_DEG)}
-          stroke={colors.red}
-          strokeOpacity={0.22}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          fill="none"
-        />
-        {value > 0.5 && (
-          <Path
-            d={describeArc(c, c, r, GAUGE_START_DEG, angle)}
-            stroke="url(#ring)"
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            fill="none"
-          />
-        )}
-      </Svg>
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.center]}>
-        <Text
-          style={[
-            font(numberSize, '800', speedKmh === null ? colors.text3 : alert ? colors.red : colors.text),
-            tabular,
-            { lineHeight: numberSize * 1.1, marginTop: -size * 0.04 },
-          ]}
-          allowFontScaling={false}
-        >
-          {speedKmh === null ? '--' : formatKmh(value)}
-        </Text>
-        <Text style={font(Math.round(size * 0.065), '600', colors.text2)} allowFontScaling={false}>
-          km/h
-        </Text>
-      </View>
+    <View style={styles.gps}>
+      <SignalBars bars={bars} color={bars >= 2 ? colors.green : bars === 1 ? colors.orange : colors.text3} />
+      <Text style={[font(12, '700', color), tabular]} allowFontScaling={false}>
+        {text}
+      </Text>
     </View>
   );
 }
 
-function Notice({
-  title,
-  body,
-  action,
-  onAction,
-}: {
-  title: string;
-  body: string;
-  action: string;
-  onAction: () => void;
-}) {
+function Notice({ text, action, onAction }: { text: string; action: string; onAction: () => void }) {
   return (
     <View style={styles.notice}>
-      <Text style={[font(18, '700', colors.red), styles.centerText]}>{title}</Text>
-      <Text style={[font(14, '500', colors.text2), styles.centerText]}>{body}</Text>
+      <Text style={[font(15, '700', colors.text), styles.noticeText]} numberOfLines={2}>
+        {text}
+      </Text>
       <Touch onPress={onAction} accessibilityLabel={action} style={styles.noticeButton}>
-        <Text style={font(16, '700')}>{action}</Text>
+        <Text style={font(15, '800', '#000')}>{action}</Text>
       </Touch>
     </View>
   );
@@ -199,7 +167,7 @@ function Notice({
 const LONG_PRESS_MS = 800;
 const FLASH_MS = 1500;
 
-function TripStats({ gps }: { gps: GpsState }) {
+export function TripWidget({ gps }: { gps: GpsState }) {
   const { trip } = gps;
   const [justReset, setJustReset] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -218,11 +186,11 @@ function TripStats({ gps }: { gps: GpsState }) {
     timer.current = setTimeout(() => setJustReset(false), FLASH_MS);
   };
 
-  const rows = [
-    { label: 'Distância', value: formatKm(trip.distanceM), unit: 'km' },
-    { label: 'Tempo', value: formatDuration(trip.movingMs), unit: '' },
-    { label: 'Média', value: formatKmh(averageKmh(trip)), unit: 'km/h' },
-    { label: 'Máxima', value: formatKmh(trip.maxKmh), unit: 'km/h' },
+  const cells = [
+    { label: 'Distância', value: formatKm(trip.distanceM), unit: 'km', Icon: RouteIcon, color: '#0A84FF' },
+    { label: 'Tempo', value: formatDuration(trip.movingMs), unit: '', Icon: ClockIcon, color: '#BF5AF2' },
+    { label: 'Média', value: formatKmh(averageKmh(trip)), unit: 'km/h', Icon: GaugeIcon, color: '#30D158' },
+    { label: 'Máxima', value: formatKmh(trip.maxKmh), unit: 'km/h', Icon: PeakIcon, color: '#FF9F0A' },
   ];
 
   return (
@@ -231,37 +199,42 @@ function TripStats({ gps }: { gps: GpsState }) {
       delayLongPress={LONG_PRESS_MS}
       accessibilityLabel="Dados da viagem"
       accessibilityHint="Segure para zerar a viagem"
-      style={styles.stats}
+      style={[styles.card, styles.tripCard]}
     >
-      <View style={styles.statsHeader}>
-        <Text style={font(14, '700')} allowFontScaling={false}>
-          Viagem
+      <View style={styles.tripHeader}>
+        <Text style={font(12, '800', colors.text2)} allowFontScaling={false}>
+          VIAGEM
         </Text>
-        <Text style={font(11, '600', justReset ? colors.accentSoft : colors.text3)} allowFontScaling={false}>
-          {justReset ? 'ZERADA' : 'segure para zerar'}
+        <Text style={font(11, '600', justReset ? colors.green : colors.text3)} allowFontScaling={false}>
+          {justReset ? 'zerada ✓' : 'segure para zerar'}
         </Text>
       </View>
       <View style={styles.grid}>
-        {rows.map((row) => (
-          <View key={row.label} style={styles.statCell}>
-            <Text style={font(11, '700', colors.text3)} allowFontScaling={false}>
-              {row.label.toUpperCase()}
-            </Text>
-            <View style={styles.statValue}>
-              <Text
-                style={[font(24, '700'), tabular]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                allowFontScaling={false}
-              >
-                {row.value}
-              </Text>
-              {row.unit !== '' && (
-                <Text style={font(12, '600', colors.text2)} allowFontScaling={false}>
-                  {row.unit}
+        {cells.map(({ label, value, unit, Icon, color }) => (
+          <View key={label} style={styles.cell}>
+            <View style={[styles.iconCircle, { backgroundColor: `${color}2E` }]}>
+              <Icon size={17} color={color} />
+            </View>
+            <View style={styles.cellText}>
+              <View style={styles.valueRow}>
+                <Text
+                  style={[font(21, '800'), tabular]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                  allowFontScaling={false}
+                >
+                  {value}
                 </Text>
-              )}
+                {unit !== '' && (
+                  <Text style={font(11, '700', colors.text2)} allowFontScaling={false}>
+                    {unit}
+                  </Text>
+                )}
+              </View>
+              <Text style={font(11, '600', colors.text3)} allowFontScaling={false}>
+                {label}
+              </Text>
             </View>
           </View>
         ))}
@@ -270,67 +243,118 @@ function TripStats({ gps }: { gps: GpsState }) {
   );
 }
 
+// ---------- Volume ----------
+
+const VOLUME_STEPS = 15;
+
+export function VolumeWidget({ media }: { media: MediaState }) {
+  const segments = volumeSegments(media.volume.current, media.volume.max, VOLUME_STEPS);
+  return (
+    <View style={[styles.card, styles.volumeCard]}>
+      <Touch
+        onPress={media.volumeDown}
+        disabled={!media.available}
+        accessibilityLabel="Diminuir volume"
+        visualSize={48}
+        style={styles.volumeButton}
+      >
+        <VolumeDownIcon size={26} color={colors.text} />
+      </Touch>
+      <View style={styles.volumeBars} accessibilityLabel={`Volume ${media.volume.current} de ${media.volume.max}`}>
+        {segments.map((on, i) => (
+          <View
+            key={i}
+            style={[
+              styles.volumeBar,
+              { height: 8 + (i / (VOLUME_STEPS - 1)) * 20, backgroundColor: on ? colors.text : colors.fill },
+            ]}
+          />
+        ))}
+      </View>
+      <Touch
+        onPress={media.volumeUp}
+        disabled={!media.available}
+        accessibilityLabel="Aumentar volume"
+        visualSize={48}
+        style={styles.volumeButton}
+      >
+        <VolumeUpIcon size={26} color={colors.text} />
+      </Touch>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
+    minHeight: 0,
     borderRadius: sizes.cardRadius,
     backgroundColor: colors.card,
     padding: 16,
+    overflow: 'hidden',
   },
-  tripCard: {
-    paddingVertical: 14,
-  },
-  gaugeArea: {
-    flex: 1,
-  },
-  headerRow: {
+  speedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 24,
+  },
+  compass: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.fill,
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  gps: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  speedRow: {
+    flex: 1,
+    minHeight: 0,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    alignSelf: 'flex-start',
     gap: 8,
-    minHeight: 22,
+    marginTop: 2,
   },
-  directionChip: {
+  speedNumber: {
+    lineHeight: 76,
+  },
+  leds: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginRight: 4,
+    gap: 3,
+    height: 12,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  gaugeBox: {
+  led: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerText: {
-    textAlign: 'center',
+    borderRadius: 2,
   },
   notice: {
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 4,
+    flex: 1,
+    justifyContent: 'center',
+    gap: 10,
+  },
+  noticeText: {
+    textAlign: 'left',
   },
   noticeButton: {
-    marginTop: 4,
-    minHeight: 50,
-    paddingHorizontal: 18,
-    borderRadius: 25,
-    backgroundColor: colors.accent,
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    backgroundColor: colors.text,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stats: {
-    flex: 1,
+  tripCard: {
+    paddingVertical: 12,
   },
-  statsHeader: {
+  tripHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
@@ -341,14 +365,56 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignContent: 'space-around',
   },
-  statCell: {
+  cell: {
     width: '50%',
-    gap: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
   },
-  statValue: {
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cellText: {
+    flex: 1,
+  },
+  valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 4,
-    paddingRight: 6,
+    gap: 3,
+  },
+  volumeCard: {
+    // Altura fixa: não cresce nem encolhe.
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 64,
+    height: 64,
+    paddingVertical: 0,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  volumeButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  volumeBars: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+    height: 28,
+  },
+  volumeBar: {
+    flex: 1,
+    borderRadius: 2,
   },
 });

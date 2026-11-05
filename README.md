@@ -4,30 +4,30 @@ App Android que transforma um **Samsung Galaxy M51** numa segunda multimídia, n
 
 Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development build (não roda no Expo Go, porque tem código nativo próprio).
 
-**Tela cheia:** o player é o card principal; velocímetro e viagem ficam ao lado.
+**Tela cheia:** o player é o card principal; velocidade, viagem e volume ficam em widgets ao lado.
 
 ```
 ┌──────┬──────────────────────────────────┬──────────────┐
-│ 78%  │ ┌────────┐  SPOTIFY      − 9 +   │ ➤ NE  GPS    │
-│14:32 │ │  capa  │                      │   ╭─────╮    │
-│qui, 5│ │        │  Céu Aberto          │  (  87  )    │
-│ (W)  │ └────────┘  Banda de Exemplo    ├──────────────┤
-│ (S)  │ ━━━━━━━━━━●──────────────  -2:09 │ Viagem       │
-│ (Z)  │   ♥    ⏮     ( ⏸ )     ⏭    ⤮   │ 23,4 km 26:03│
-│  ▦   │                                  │ 54   104     │
+│ 78%  │  (capa desfocada no fundo)       │ ➤NE  ▂▄▆ ±4 m│
+│14:32 │ ┌────────┐ TOCANDO NO SPOTIFY    │ 87 km/h      │
+│qui, 5│ │  capa  │ Céu Aberto            │ ▮▮▮▮▮▮▯▯▯▯▯▯ │
+│ (W)  │ └────────┘ Banda de Exemplo      ├──────────────┤
+│ (S)  │ ━━━━━━━━━━●──────────────  -2:09 │ VIAGEM (2×2) │
+│ (Z)  │   ♥    ⏮     ( ⏸ )     ⏭    ⤮   ├──────────────┤
+│  ▦   │                                  │ 🔈 ▁▂▃▅▆▇ 🔊 │
 └──────┴──────────────────────────────────┴──────────────┘
 ```
 
-**Em tela dividida com o Waze** (o Waze na outra metade): barra lateral com a velocidade + o player.
+**Em tela dividida com o Waze** (o Waze na outra metade): barra lateral com a velocidade + o player, com o volume nos botões dos lados.
 
 ## O que tem nesta versão
 
 | Função | Como funciona |
 | --- | --- |
-| **Tocando agora** | No estilo do Spotify: fundo com a cor da capa, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio player (no Spotify: **curtir** e **aleatório/repetir**, com os ícones dele). Funciona com Spotify, YT Music, Deezer ou qualquer player. Precisa liberar o **Acesso a notificações** uma vez (veja abaixo). |
-| **Controles de música** | Anterior, play/pause, próxima e volume − / +. Funcionam mesmo sem o acesso liberado. |
-| **Velocímetro** | GPS a cada 1 s com precisão máxima. Anel de 0 a 200 km/h que fica laranja/vermelho acima de 120. Direção (N, NE, L, SE, S, SO, O, NO) com seta. |
-| **Viagem** | Distância, tempo em movimento, média e máxima. **Segure os números por 0,8 s para zerar** (o celular vibra). |
+| **Tocando agora** | No estilo do Spotify: a capa desfocada vira o fundo do card, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio player (no Spotify: **curtir** e **aleatório/repetir**, com os ícones dele). Funciona com Spotify, YT Music, Deezer ou qualquer player. Precisa liberar o **Acesso a notificações** uma vez (veja abaixo). |
+| **Controles de música** | Anterior, play/pause, próxima e um widget de volume com barra em degraus. Funcionam mesmo sem o acesso liberado. |
+| **Velocidade** | GPS a cada 1 s com precisão máxima. Número grande, barra de "LEDs" que fica laranja/vermelha acima de 120 km/h, bússola (N, NE, L, SE, S, SO, O, NO) e sinal do GPS em barrinhas. |
+| **Viagem** | Distância, tempo em movimento, média e máxima, cada uma com seu ícone. **Segure o widget por 0,8 s para zerar** (o celular vibra). |
 | **Barra lateral** | Bateria, hora e 3 apps fixos (um de navegação, um de música, um de comunicação). O botão de baixo alterna entre o painel e a grade com todos os apps. |
 | **Bateria** | Fica laranja quando está **na bateria** ou quando o nível cai mesmo na tomada (**USB fraca**), porque a USB do carro pode não dar conta. |
 | **Tela dividida** | Com o Waze ao lado, o painel encolhe para a barra lateral (com a velocidade) e o player. |

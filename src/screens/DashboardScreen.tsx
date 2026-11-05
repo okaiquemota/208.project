@@ -1,14 +1,15 @@
 // A tela do painel, no estilo CarPlay.
 //
 // Tela cheia (~914 × 411 dp no M51):
-//  ┌──────┬──────────────────────────────┬─────────────┐
-//  │ 14:32│ ┌──────┐ SPOTIFY      − 9 +  │ ➤ NE  GPS   │
-//  │      │ │ capa │ Título              │    ╭───╮    │
-//  │  (W) │ │      │ Artista             │   (  87 )   │
-//  │  (S) │ └──────┘                     ├─────────────┤
-//  │  (Z) │ ━━━━━━━━●─────────────────── │ Viagem      │
-//  │  ▦   │  ♡   ⏮    ( ▶ )    ⏭   ⤮    │ km  tempo…  │
-//  └──────┴──────────────────────────────┴─────────────┘
+//  ┌──────┬────────────────────────────────┬─────────────┐
+//  │ 14:32│  (capa desfocada no fundo)     │ ➤NE   ▂▄▆ ±4│
+//  │      │ ┌──────┐ TOCANDO NO SPOTIFY    │ 87 km/h     │
+//  │  (W) │ │ capa │ Título                │ ▮▮▮▮▮▯▯▯▯▯  │
+//  │  (S) │ └──────┘ Artista               ├─────────────┤
+//  │  (Z) │ ━━━━━━━━●──────────────────────│ VIAGEM 2×2  │
+//  │  ▦   │  ♡    ⏮     ( ▶ )     ⏭    ⤮  ├─────────────┤
+//  │      │                                │ 🔈 ▁▂▃▅▆ 🔊 │
+//  └──────┴────────────────────────────────┴─────────────┘
 //
 // Tela dividida com o Waze (largura < 700 dp): só a barra lateral (com a
 // velocidade) e o card da música. O Waze ocupa a outra metade.
@@ -21,7 +22,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { type EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppGrid } from '../components/AppGrid';
-import { SpeedCard, TripCard } from '../components/InstrumentCards';
+import { SpeedWidget, TripWidget, VolumeWidget } from '../components/InstrumentCards';
 import { NowPlayingCard } from '../components/NowPlayingCard';
 import { Rail } from '../components/Rail';
 import { CAR_APPS } from '../config/apps';
@@ -156,11 +157,12 @@ export function DashboardView({
             <View style={styles.player}>{nowPlaying}</View>
             <View style={styles.side}>
               <View style={styles.speed}>
-                <SpeedCard gps={gps} />
+                <SpeedWidget gps={gps} />
               </View>
               <View style={styles.trip}>
-                <TripCard gps={gps} />
+                <TripWidget gps={gps} />
               </View>
+              <VolumeWidget media={media} />
             </View>
           </>
         )}
@@ -180,17 +182,21 @@ const styles = StyleSheet.create({
     gap: sizes.gap,
   },
   player: {
-    flex: 1.75,
+    flex: 1.9,
   },
   side: {
     flex: 1,
     gap: sizes.gap,
+    minHeight: 0,
   },
+  // minHeight 0: deixa os cards encolherem até a parte deles (o volume tem altura fixa).
   speed: {
-    flex: 1.3,
+    flex: 1.25,
+    minHeight: 0,
   },
   trip: {
     flex: 1,
+    minHeight: 0,
   },
   compactMain: {
     flex: 1,

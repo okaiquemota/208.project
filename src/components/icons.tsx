@@ -57,3 +57,38 @@ export function BatteryIcon({ level, color, width = 26 }: { level: number; color
     </Svg>
   );
 }
+
+/** Rota (distância percorrida). */
+export const RouteIcon = make(
+  'M6 3a3 3 0 0 1 1 5.83V15a2 2 0 0 0 4 0V9a4 4 0 0 1 8 0v6.17A3 3 0 1 1 17 15.17V9a2 2 0 0 0-4 0v6a4 4 0 0 1-8 0V8.83A3 3 0 0 1 6 3z',
+);
+/** Relógio (tempo em movimento). */
+export const ClockIcon = make(
+  'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm1 3v4.6l3.2 1.9-1 1.7L11 12.7V7z',
+);
+/** Mostrador (velocidade média). */
+export const GaugeIcon = make(
+  'M12 4a10 10 0 0 1 10 10c0 1.9-.53 3.68-1.45 5.2l-1.7-1.05A8 8 0 1 0 4 14c0 1.52.42 2.95 1.15 4.15l-1.7 1.05A9.96 9.96 0 0 1 2 14 10 10 0 0 1 12 4zm4.95 4.64 1.41 1.41-4.6 4.6a2 2 0 1 1-1.41-1.41z',
+);
+/** Pico (velocidade máxima). */
+export const PeakIcon = make('M3 19 10 7l4 6 2.5-4L21 19h-2.4l-2.1-3.4-2.4 3.8-4.2-6.3L5.3 19z');
+
+/** Sinal do GPS em barrinhas (0 a 4), como o sinal do celular. */
+export function SignalBars({ bars, color, size = 18 }: { bars: number; color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {[0, 1, 2, 3].map((i) => (
+        <Rect
+          key={i}
+          x={2 + i * 5.5}
+          y={18 - i * 4.5}
+          width={4}
+          height={4 + i * 4.5}
+          rx={1}
+          fill={color}
+          fillOpacity={i < bars ? 1 : 0.22}
+        />
+      ))}
+    </Svg>
+  );
+}
