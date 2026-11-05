@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["br.com.movcode.painel208.mediakeys.MediaKeysModule"]
+  }
+}
