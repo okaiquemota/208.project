@@ -1,2 +1,14 @@
-<manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- "Acesso a notificações": necessário para ler música, artista e capa do player. -->
+    <service
+      android:name="br.com.movcode.painel208.mediakeys.NowPlayingListenerService"
+      android:label="Painel 208"
+      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+  </application>
 </manifest>

@@ -1,16 +1,29 @@
 import { NativeModule, requireOptionalNativeModule } from 'expo';
 
-import type { VolumeInfo } from './MediaKeys.types';
+import type { MediaKeysEvents, NowPlayingInfo, VolumeInfo } from './MediaKeys.types';
 
 /** Funções que o lado Kotlin (MediaKeysModule.kt) expõe. */
-declare class MediaKeysNativeModule extends NativeModule<{}> {
+declare class MediaKeysNativeModule extends NativeModule<MediaKeysEvents> {
+  // Controles: usam o player direto com acesso liberado; senão, teclas de mídia.
   playPause(): boolean;
   next(): boolean;
   previous(): boolean;
+  seekTo(positionMs: number): boolean;
+
   volumeUp(): VolumeInfo;
   volumeDown(): VolumeInfo;
   getVolume(): VolumeInfo;
   isMusicActive(): boolean;
+
+  // "Tocando agora" (precisa do Acesso a notificações).
+  hasNotificationAccess(): boolean;
+  openNotificationAccessSettings(): boolean;
+  /** Dados crus do Kotlin; valide com parseNowPlaying antes de usar. */
+  getNowPlaying(): Record<string, unknown> | null;
+
+  // Tela dividida.
+  openAdjacent(packageName: string): boolean;
+  isInMultiWindow(): boolean;
 }
 
 /**
@@ -21,4 +34,4 @@ declare class MediaKeysNativeModule extends NativeModule<{}> {
 const MediaKeys = requireOptionalNativeModule<MediaKeysNativeModule>('MediaKeys');
 
 export default MediaKeys;
-export type { MediaKeysNativeModule };
+export type { MediaKeysNativeModule, NowPlayingInfo };

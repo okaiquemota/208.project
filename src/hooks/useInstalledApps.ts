@@ -4,6 +4,7 @@
 import * as IntentLauncher from 'expo-intent-launcher';
 import { useCallback, useEffect, useState } from 'react';
 
+import MediaKeys from '../../modules/media-keys';
 import type { CarApp } from '../lib/carApps';
 import { useAppActive } from './useAppActive';
 
@@ -59,6 +60,13 @@ export function useInstalledApps(apps: CarApp[]) {
 
   const open = useCallback(
     (pkg: string) => {
+      // Com o painel em tela dividida, o app abre na outra metade (ex.: Waze).
+      // Em tela cheia o Android ignora o "ao lado" e abre normalmente.
+      try {
+        if (MediaKeys?.openAdjacent(pkg)) return;
+      } catch {
+        // Cai para o jeito normal abaixo.
+      }
       try {
         IntentLauncher.openApplication(pkg);
       } catch {

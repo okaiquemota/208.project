@@ -1,33 +1,53 @@
-// Cores, tamanhos e tipografia do painel.
+// Visual do painel, no estilo CarPlay / Android Auto: fundo preto, barra
+// lateral, cards grandes bem arredondados, fonte Inter e poucas cores.
 //
 // Fundo preto puro: em tela AMOLED, pixel preto fica apagado (menos calor,
-// menos bateria e menos burn-in). Uma cor de destaque só (ciano). O laranja
-// avermelhado aparece só como alerta (acima de 120 km/h, bateria descarregando).
+// menos bateria e menos burn-in).
 
 import type { TextStyle } from 'react-native';
 
 export const colors = {
   bg: '#000000',
-  /** Fundo dos cards: quase preto, só pra separar as áreas. */
-  surface: '#0B0C0E',
-  border: '#1C1F24',
-  text: '#F2F4F7',
-  textDim: '#8B929C',
-  textFaint: '#4B515A',
-  accent: '#22D3EE',
-  alert: '#FF5A36',
-  /** Trilho do arco do velocímetro. */
-  track: '#1A1D22',
+  /** Fundo dos cards. */
+  card: '#17181C',
+  /** Elementos dentro dos cards (botões secundários, trilhos). */
+  fill: 'rgba(255,255,255,0.10)',
+  fillPressed: 'rgba(255,255,255,0.22)',
+  /** Botão principal claro (play/pause), como no CarPlay. */
+  primaryButton: 'rgba(255,255,255,0.90)',
+  track: 'rgba(255,255,255,0.16)',
+  text: '#FFFFFF',
+  text2: 'rgba(235,235,245,0.66)',
+  text3: 'rgba(235,235,245,0.38)',
+  /** Cor de destaque (velocímetro, botões de ação). */
+  accent: '#0A84FF',
+  accentSoft: '#64D2FF',
+  green: '#30D158',
+  orange: '#FF9F0A',
+  red: '#FF453A',
 } as const;
 
 export const sizes = {
   /** Botão mínimo pra acertar dirigindo (dp). */
   minTouch: 64,
-  radius: 14,
+  cardRadius: 26,
+  buttonRadius: 20,
   gap: 10,
   /** Margem da tela (além da margem reservada para o anti burn-in). */
-  screenPadding: 8,
+  screenPadding: 6,
+  /** Largura da barra lateral. */
+  rail: 84,
 } as const;
+
+/** Família da fonte embutida pelo plugin expo-font (app.json). */
+export const FONT = 'Inter';
+
+type Weight = '400' | '500' | '600' | '700' | '800';
+
+/** Estilo de texto padrão: Inter, tamanho, peso e cor. */
+export function font(size: number, weight: Weight = '400', color: string = colors.text): TextStyle {
+  return { fontFamily: FONT, fontSize: size, fontWeight: weight, color, includeFontPadding: false };
+}
 
 /** Números com largura fixa: "111" e "888" ocupam o mesmo espaço, nada treme. */
 export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
@@ -35,5 +55,8 @@ export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 /** Limite a partir do qual o velocímetro muda para a cor de alerta. */
 export const SPEED_ALERT_KMH = 120;
 
-/** Fundo da escala do velocímetro. */
+/** Fim da escala do velocímetro. */
 export const SPEED_MAX_KMH = 200;
+
+/** Abaixo dessa largura (tela dividida com o Waze) o painel usa o layout compacto. */
+export const COMPACT_BELOW_DP = 700;

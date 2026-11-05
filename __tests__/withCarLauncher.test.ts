@@ -66,8 +66,20 @@ describe('withCarLauncher: lista de apps', () => {
         { package: 'com.whatsapp' },
       ]),
     ).toEqual([
-      { label: 'Waze', package: 'com.waze' },
-      { label: 'com.whatsapp', package: 'com.whatsapp' },
+      { label: 'Waze', package: 'com.waze', tipo: 'outro' },
+      { label: 'com.whatsapp', package: 'com.whatsapp', tipo: 'outro' },
+    ]);
+  });
+
+  it('mantém o tipo válido e troca tipo desconhecido por "outro"', () => {
+    expect(
+      normalizeApps([
+        { label: 'Waze', package: 'com.waze', tipo: 'navegacao' },
+        { label: 'X', package: 'com.x.y', tipo: 'jogo' },
+      ]),
+    ).toEqual([
+      { label: 'Waze', package: 'com.waze', tipo: 'navegacao' },
+      { label: 'X', package: 'com.x.y', tipo: 'outro' },
     ]);
   });
 

@@ -1,5 +1,5 @@
 import { BURN_IN_MAX_SHIFT, BURN_IN_OFFSETS, burnInOffset } from '../src/lib/burnIn';
-import { isValidPackageName, parseCarApps } from '../src/lib/carApps';
+import { isValidPackageName, parseCarApps, pickDockApps } from '../src/lib/carApps';
 import {
   describeArc,
   GAUGE_END_DEG,
@@ -88,9 +88,39 @@ describe('lista de atalhos', () => {
       null,
     ]);
     expect(apps).toEqual([
-      { label: 'Waze', package: 'com.waze' },
-      { label: 'com.whatsapp', package: 'com.whatsapp' },
+      { label: 'Waze', package: 'com.waze', tipo: 'outro' },
+      { label: 'com.whatsapp', package: 'com.whatsapp', tipo: 'outro' },
     ]);
+  });
+
+  it('lê o tipo (navegação, música…) e usa "outro" quando falta ou é inválido', () => {
+    const apps = parseCarApps([
+      { label: 'Waze', package: 'com.waze', tipo: 'navegacao' },
+      { label: 'Spotify', package: 'com.spotify.music', tipo: 'musica' },
+      { label: 'X', package: 'com.x.y', tipo: 'jogo' },
+    ]);
+    expect(apps.map((a) => a.tipo)).toEqual(['navegacao', 'musica', 'outro']);
+  });
+
+  it('barra lateral: um app de navegação, um de música e um de comunicação', () => {
+    const apps = parseCarApps([
+      { label: 'Waze', package: 'com.waze', tipo: 'navegacao' },
+      { label: 'Maps', package: 'com.google.android.apps.maps', tipo: 'navegacao' },
+      { label: 'Spotify', package: 'com.spotify.music', tipo: 'musica' },
+      { label: 'Deezer', package: 'deezer.android.app', tipo: 'musica' },
+      { label: 'WhatsApp', package: 'com.whatsapp', tipo: 'comunicacao' },
+    ]);
+    expect(pickDockApps(apps).map((a) => a.label)).toEqual(['Waze', 'Spotify', 'WhatsApp']);
+  });
+
+  it('barra lateral completa com os próximos quando falta um tipo', () => {
+    const apps = parseCarApps([
+      { label: 'Waze', package: 'com.waze', tipo: 'navegacao' },
+      { label: 'Maps', package: 'com.google.android.apps.maps', tipo: 'navegacao' },
+      { label: 'Spotify', package: 'com.spotify.music', tipo: 'musica' },
+    ]);
+    expect(pickDockApps(apps).map((a) => a.label)).toEqual(['Waze', 'Spotify', 'Maps']);
+    expect(pickDockApps([])).toEqual([]);
   });
 
   it('valor que não é lista vira lista vazia', () => {

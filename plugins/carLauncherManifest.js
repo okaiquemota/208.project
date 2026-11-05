@@ -6,6 +6,7 @@
 // vira { $: { 'android:name': 'com.waze' } }.
 
 const PACKAGE_RE = /^[A-Za-z][\w]*(\.[A-Za-z_][\w]*)+$/;
+const TIPOS = ['navegacao', 'musica', 'comunicacao', 'outro'];
 
 const ACTION_MAIN = 'android.intent.action.MAIN';
 const CATEGORY_HOME = 'android.intent.category.HOME';
@@ -25,7 +26,8 @@ function normalizeApps(apps) {
     if (seen.has(pkg)) continue;
     seen.add(pkg);
     const label = typeof item.label === 'string' && item.label.trim() ? item.label.trim() : pkg;
-    out.push({ label, package: pkg });
+    const tipo = TIPOS.includes(item.tipo) ? item.tipo : 'outro';
+    out.push({ label, package: pkg, tipo });
   }
   return out;
 }

@@ -2,7 +2,7 @@
 //
 // Uso no app.json:
 //   ["./plugins/withCarLauncher", {
-//     "apps": [{ "label": "Waze", "package": "com.waze" }, ...],
+//     "apps": [{ "label": "Waze", "package": "com.waze", "tipo": "navegacao" }, ...],
 //     "asHomeLauncher": false,
 //     "sensorLandscape": true
 //   }]
@@ -22,7 +22,7 @@ const {
   setSensorLandscape,
 } = require('./carLauncherManifest');
 
-/** @type {import('expo/config-plugins').ConfigPlugin<{apps?: {label?: string, package: string}[], asHomeLauncher?: boolean, sensorLandscape?: boolean}>} */
+/** @type {import('expo/config-plugins').ConfigPlugin<{apps?: {label?: string, package: string, tipo?: string}[], asHomeLauncher?: boolean, sensorLandscape?: boolean}>} */
 const withCarLauncher = (config, props = {}) => {
   const apps = normalizeApps(props.apps);
   const asHomeLauncher = props.asHomeLauncher === true;
