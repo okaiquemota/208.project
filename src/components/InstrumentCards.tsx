@@ -1,7 +1,6 @@
-// Card do "painel de instrumentos": velocímetro em anel, direção e status do
-// GPS à esquerda; data e dados da viagem à direita. Fica no lugar onde o
-// CarPlay mostraria o mapa (o Waze de verdade vai na outra metade da tela,
-// em tela dividida).
+// Cards do "painel de instrumentos", na coluna ao lado do player:
+// - SpeedCard: velocímetro em anel, direção e status do GPS;
+// - TripCard: distância, tempo, média e máxima (segure para zerar).
 
 import { useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, StyleSheet, Text, Vibration, View } from 'react-native';
@@ -9,7 +8,6 @@ import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { colors, font, SPEED_ALERT_KMH, SPEED_MAX_KMH, sizes, tabular } from '../config/theme';
 import type { GpsState, GpsStatus } from '../hooks/useGps';
-import { formatDayMonth, formatWeekday } from '../lib/datetime';
 import { formatDuration, formatKm, formatKmh } from '../lib/format';
 import { describeArc, GAUGE_END_DEG, GAUGE_START_DEG, speedToAngle } from '../lib/gauge';
 import { toCardinal } from '../lib/geo';
@@ -17,32 +15,23 @@ import { averageKmh, DEFAULT_RULES } from '../lib/trip';
 import { NavArrowIcon } from './icons';
 import { Touch } from './Touch';
 
-type Props = {
-  gps: GpsState;
-  now: Date;
-};
-
-export function ClusterCard({ gps, now }: Props) {
+/** Card do velocímetro: direção, status do GPS e o anel com a velocidade. */
+export function SpeedCard({ gps }: { gps: GpsState }) {
   return (
     <View style={styles.card}>
-      <View style={styles.left}>
-        <GaugeArea gps={gps} />
-      </View>
-      <View style={styles.divider} />
-      <View style={styles.right}>
-        <Text style={font(17, '700')} numberOfLines={1} allowFontScaling={false}>
-          {capitalize(formatWeekday(now))}
-        </Text>
-        <Text style={font(14, '500', colors.text2)} numberOfLines={1} allowFontScaling={false}>
-          {formatDayMonth(now)}
-        </Text>
-        <TripStats gps={gps} />
-      </View>
+      <GaugeArea gps={gps} />
     </View>
   );
 }
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** Card da viagem: distância, tempo, média e máxima (segure para zerar). */
+export function TripCard({ gps }: { gps: GpsState }) {
+  return (
+    <View style={[styles.card, styles.tripCard]}>
+      <TripStats gps={gps} />
+    </View>
+  );
+}
 
 // ---------- Velocímetro ----------
 
@@ -196,8 +185,8 @@ function Notice({
 }) {
   return (
     <View style={styles.notice}>
-      <Text style={[font(20, '700', colors.red), styles.centerText]}>{title}</Text>
-      <Text style={[font(15, '500', colors.text2), styles.centerText]}>{body}</Text>
+      <Text style={[font(18, '700', colors.red), styles.centerText]}>{title}</Text>
+      <Text style={[font(14, '500', colors.text2), styles.centerText]}>{body}</Text>
       <Touch onPress={onAction} accessibilityLabel={action} style={styles.noticeButton}>
         <Text style={font(16, '700')}>{action}</Text>
       </Touch>
@@ -244,32 +233,39 @@ function TripStats({ gps }: { gps: GpsState }) {
       accessibilityHint="Segure para zerar a viagem"
       style={styles.stats}
     >
-      {rows.map((row) => (
-        <View key={row.label} style={styles.statRow}>
-          <Text style={font(12, '700', colors.text3)} allowFontScaling={false}>
-            {row.label.toUpperCase()}
-          </Text>
-          <View style={styles.statValue}>
-            <Text
-              style={[font(26, '700'), tabular]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-              allowFontScaling={false}
-            >
-              {row.value}
+      <View style={styles.statsHeader}>
+        <Text style={font(14, '700')} allowFontScaling={false}>
+          Viagem
+        </Text>
+        <Text style={font(11, '600', justReset ? colors.accentSoft : colors.text3)} allowFontScaling={false}>
+          {justReset ? 'ZERADA' : 'segure para zerar'}
+        </Text>
+      </View>
+      <View style={styles.grid}>
+        {rows.map((row) => (
+          <View key={row.label} style={styles.statCell}>
+            <Text style={font(11, '700', colors.text3)} allowFontScaling={false}>
+              {row.label.toUpperCase()}
             </Text>
-            {row.unit !== '' && (
-              <Text style={font(13, '600', colors.text2)} allowFontScaling={false}>
-                {row.unit}
+            <View style={styles.statValue}>
+              <Text
+                style={[font(24, '700'), tabular]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+                allowFontScaling={false}
+              >
+                {row.value}
               </Text>
-            )}
+              {row.unit !== '' && (
+                <Text style={font(12, '600', colors.text2)} allowFontScaling={false}>
+                  {row.unit}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
-      ))}
-      <Text style={font(11, '600', justReset ? colors.accentSoft : colors.text3)} allowFontScaling={false}>
-        {justReset ? 'VIAGEM ZERADA' : 'Segure para zerar'}
-      </Text>
+        ))}
+      </View>
     </Touch>
   );
 }
@@ -277,21 +273,12 @@ function TripStats({ gps }: { gps: GpsState }) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    flexDirection: 'row',
     borderRadius: sizes.cardRadius,
     backgroundColor: colors.card,
-    padding: 18,
+    padding: 16,
   },
-  left: {
-    flex: 1.35,
-  },
-  divider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginHorizontal: 16,
-  },
-  right: {
-    flex: 1,
+  tripCard: {
+    paddingVertical: 14,
   },
   gaugeArea: {
     flex: 1,
@@ -300,7 +287,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    minHeight: 24,
+    minHeight: 22,
   },
   directionChip: {
     flexDirection: 'row',
@@ -317,7 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   center: {
     alignItems: 'center',
@@ -328,29 +315,40 @@ const styles = StyleSheet.create({
   },
   notice: {
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 8,
+    gap: 8,
+    paddingHorizontal: 4,
   },
   noticeButton: {
-    marginTop: 6,
-    minHeight: 52,
-    paddingHorizontal: 22,
-    borderRadius: 26,
+    marginTop: 4,
+    minHeight: 50,
+    paddingHorizontal: 18,
+    borderRadius: 25,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stats: {
     flex: 1,
-    marginTop: 12,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
   },
-  statRow: {
-    gap: 2,
+  grid: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignContent: 'space-around',
+  },
+  statCell: {
+    width: '50%',
+    gap: 1,
   },
   statValue: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 5,
+    gap: 4,
+    paddingRight: 6,
   },
 });

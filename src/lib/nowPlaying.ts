@@ -1,9 +1,9 @@
 // "Tocando agora": validação dos dados do player, posição da música em tempo
 // real, formato de tempo e a cor de fundo tirada da capa.
 
-import type { NowPlayingInfo } from '../../modules/media-keys/src/MediaKeys.types';
+import type { NowPlayingInfo, PlayerAction } from '../../modules/media-keys/src/MediaKeys.types';
 
-export type { NowPlayingInfo };
+export type { NowPlayingInfo, PlayerAction };
 
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -17,6 +17,7 @@ export function parseNowPlaying(raw: unknown): NowPlayingInfo | null {
   if (!packageName) return null;
   const artworkColor = str(r.artworkColor);
   const artworkUri = str(r.artworkUri);
+  const remote = str(r.artworkRemoteUri);
   return {
     packageName,
     appName: str(r.appName) || packageName,
@@ -30,7 +31,23 @@ export function parseNowPlaying(raw: unknown): NowPlayingInfo | null {
     isPlaying: r.isPlaying === true,
     artworkUri: artworkUri || null,
     artworkColor: HEX_RE.test(artworkColor) ? artworkColor : null,
+    artworkRemoteUri: /^https?:\/\//.test(remote) ? remote : null,
+    customActions: parseActions(r.customActions),
   };
+}
+
+/** Botões extras do player: só os que têm código de ação. */
+function parseActions(raw: unknown): PlayerAction[] {
+  if (!Array.isArray(raw)) return [];
+  const out: PlayerAction[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null) continue;
+    const a = item as Record<string, unknown>;
+    const action = str(a.action);
+    if (!action) continue;
+    out.push({ action, name: str(a.name), iconUri: str(a.iconUri) || null });
+  }
+  return out;
 }
 
 /**

@@ -22,6 +22,11 @@ const base: NowPlayingInfo = {
   isPlaying: true,
   artworkUri: 'file:///capa.jpg',
   artworkColor: '#336699',
+  artworkRemoteUri: 'https://exemplo.com/capa640.jpg',
+  customActions: [
+    { action: 'curtir', name: 'Curtir', iconUri: 'file:///curtir.png' },
+    { action: 'aleatorio', name: 'Aleatório', iconUri: null },
+  ],
 };
 
 describe('tocando agora: dados do player', () => {
@@ -46,6 +51,8 @@ describe('tocando agora: dados do player', () => {
       artworkColor: 'azul',
     });
     expect(np).toMatchObject({
+      artworkRemoteUri: null,
+      customActions: [],
       appName: 'com.x.y',
       title: '',
       durationMs: 0,
@@ -55,6 +62,18 @@ describe('tocando agora: dados do player', () => {
       artworkUri: null,
       artworkColor: null,
     });
+  });
+});
+
+describe('tocando agora: botões extras e capa remota', () => {
+  it('descarta botão sem código e capa remota que não é http(s)', () => {
+    const np = parseNowPlaying({
+      ...base,
+      artworkRemoteUri: 'content://com.spotify.music/capa',
+      customActions: [{ name: 'sem código' }, { action: 'repetir', name: 'Repetir' }, 'x', null],
+    });
+    expect(np?.artworkRemoteUri).toBeNull();
+    expect(np?.customActions).toEqual([{ action: 'repetir', name: 'Repetir', iconUri: null }]);
   });
 });
 

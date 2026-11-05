@@ -32,6 +32,8 @@ export type MediaState = {
   volumeDown: () => void;
   /** Abre a tela do Android para liberar o acesso. */
   openAccessSettings: () => void;
+  /** Aperta um botão extra do player (curtir, aleatório…). */
+  sendAction: (action: string) => void;
 };
 
 const EMPTY_VOLUME: VolumeInfo = { current: 0, max: 0 };
@@ -147,5 +149,6 @@ export function useMedia(): MediaState {
     volumeUp: changeVolume(true),
     volumeDown: changeVolume(false),
     openAccessSettings: run((m) => m.openNotificationAccessSettings()),
+    sendAction: (action: string) => run((m) => m.sendCustomAction(action))(),
   };
 }

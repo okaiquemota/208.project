@@ -1,13 +1,14 @@
 // A tela do painel, no estilo CarPlay.
 //
 // Tela cheia (~914 × 411 dp no M51):
-//  ┌──────┬───────────────────────────┬──────────────────┐
-//  │ 14:32│  velocímetro  │  viagem   │   capa da música │
-//  │  (W) │               │           │   Título         │
-//  │  (S) │               │           │   Artista        │
-//  │  (Z) │                           │   ⏮   ⏸   ⏭      │
-//  │  ▦   │                           │                  │
-//  └──────┴───────────────────────────┴──────────────────┘
+//  ┌──────┬──────────────────────────────┬─────────────┐
+//  │ 14:32│ ┌──────┐ SPOTIFY      − 9 +  │ ➤ NE  GPS   │
+//  │      │ │ capa │ Título              │    ╭───╮    │
+//  │  (W) │ │      │ Artista             │   (  87 )   │
+//  │  (S) │ └──────┘                     ├─────────────┤
+//  │  (Z) │ ━━━━━━━━●─────────────────── │ Viagem      │
+//  │  ▦   │  ♡   ⏮    ( ▶ )    ⏭   ⤮    │ km  tempo…  │
+//  └──────┴──────────────────────────────┴─────────────┘
 //
 // Tela dividida com o Waze (largura < 700 dp): só a barra lateral (com a
 // velocidade) e o card da música. O Waze ocupa a outra metade.
@@ -20,7 +21,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { type EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppGrid } from '../components/AppGrid';
-import { ClusterCard } from '../components/ClusterCard';
+import { SpeedCard, TripCard } from '../components/InstrumentCards';
 import { NowPlayingCard } from '../components/NowPlayingCard';
 import { Rail } from '../components/Rail';
 import { CAR_APPS } from '../config/apps';
@@ -152,10 +153,15 @@ export function DashboardView({
           <View style={styles.compactMain}>{nowPlaying}</View>
         ) : (
           <>
-            <View style={styles.cluster}>
-              <ClusterCard gps={gps} now={now} />
-            </View>
             <View style={styles.player}>{nowPlaying}</View>
+            <View style={styles.side}>
+              <View style={styles.speed}>
+                <SpeedCard gps={gps} />
+              </View>
+              <View style={styles.trip}>
+                <TripCard gps={gps} />
+              </View>
+            </View>
           </>
         )}
       </View>
@@ -173,10 +179,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: sizes.gap,
   },
-  cluster: {
-    flex: 1.5,
-  },
   player: {
+    flex: 1.75,
+  },
+  side: {
+    flex: 1,
+    gap: sizes.gap,
+  },
+  speed: {
+    flex: 1.3,
+  },
+  trip: {
     flex: 1,
   },
   compactMain: {

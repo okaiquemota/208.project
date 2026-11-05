@@ -4,37 +4,27 @@ App Android que transforma um **Samsung Galaxy M51** numa segunda multimídia, n
 
 Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development build (não roda no Expo Go, porque tem código nativo próprio).
 
-**Tela cheia:**
+**Tela cheia:** o player é o card principal; velocímetro e viagem ficam ao lado.
 
 ```
-┌──────┬──────────────────────────────────┬─────────────────────┐
-│ 78%  │ ➤ NE  · GPS ±4 m  │ Quinta-feira │ (S)          − 9 +  │
-│14:32 │     ╭────────╮    │ DISTÂNCIA    │   capa da música    │
-│      │    /   87    \   │ 23,4 km      │                     │
-│ (W)  │       km/h        │ TEMPO 26:03  │ Céu Aberto          │
-│ (S)  │                   │ MÉDIA 54     │ Banda de Exemplo    │
-│ (Z)  │                   │ MÁXIMA 104   │ ━━━━━━──────── -2:09│
-│  ▦   │                   │              │   ⏮    [⏸]    ⏭    │
-└──────┴──────────────────────────────────┴─────────────────────┘
+┌──────┬──────────────────────────────────┬──────────────┐
+│ 78%  │ ┌────────┐  SPOTIFY      − 9 +   │ ➤ NE  GPS    │
+│14:32 │ │  capa  │                      │   ╭─────╮    │
+│qui, 5│ │        │  Céu Aberto          │  (  87  )    │
+│ (W)  │ └────────┘  Banda de Exemplo    ├──────────────┤
+│ (S)  │ ━━━━━━━━━━●──────────────  -2:09 │ Viagem       │
+│ (Z)  │   ♥    ⏮     ( ⏸ )     ⏭    ⤮   │ 23,4 km 26:03│
+│  ▦   │                                  │ 54   104     │
+└──────┴──────────────────────────────────┴──────────────┘
 ```
 
-**Em tela dividida com o Waze** (o Waze na outra metade):
-
-```
-┌──────┬─────────────────────┐
-│14:32 │   capa da música    │
-│  87  │ Título              │
-│ KM/H │ Artista             │
-│ (W)  │ ━━━━━━────────────  │
-│ (S)  │   ⏮    [⏸]    ⏭    │
-└──────┴─────────────────────┘
-```
+**Em tela dividida com o Waze** (o Waze na outra metade): barra lateral com a velocidade + o player.
 
 ## O que tem nesta versão
 
 | Função | Como funciona |
 | --- | --- |
-| **Tocando agora** | Capa ocupando o card, título, artista, barra de progresso e botões grandes, do Spotify, YT Music, Deezer ou qualquer player. Precisa liberar o **Acesso a notificações** uma vez (veja abaixo). |
+| **Tocando agora** | No estilo do Spotify: fundo com a cor da capa, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio player (no Spotify: **curtir** e **aleatório/repetir**, com os ícones dele). Funciona com Spotify, YT Music, Deezer ou qualquer player. Precisa liberar o **Acesso a notificações** uma vez (veja abaixo). |
 | **Controles de música** | Anterior, play/pause, próxima e volume − / +. Funcionam mesmo sem o acesso liberado. |
 | **Velocímetro** | GPS a cada 1 s com precisão máxima. Anel de 0 a 200 km/h que fica laranja/vermelho acima de 120. Direção (N, NE, L, SE, S, SO, O, NO) com seta. |
 | **Viagem** | Distância, tempo em movimento, média e máxima. **Segure os números por 0,8 s para zerar** (o celular vibra). |
@@ -197,7 +187,7 @@ src/
   config/                 tema (cores, fonte) e leitura da lista de atalhos
   lib/                    funções puras, sem React, todas com teste
   hooks/                  ligam o app ao sistema (GPS, bateria, música…)
-  components/             Rail, ClusterCard, NowPlayingCard, AppGrid…
+  components/             Rail, NowPlayingCard, InstrumentCards, AppGrid…
   screens/DashboardScreen.tsx  monta o layout (tela cheia ou dividida)
 __tests__/                testes (Jest)
 ```
@@ -241,6 +231,7 @@ O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolv
 
 ## Próximos passos (estrutura já pronta)
 
+- **Playlists do Spotify dentro do painel** (Curtidas, playlists, recomendações), com o SDK oficial "App Remote" do Spotify. Precisa cadastrar o app em developer.spotify.com (pacote `br.com.movcode.painel208`, redirect `painel208://spotify-callback` e o SHA-1 do certificado que assina o APK) para ter um Client ID.
 - **Waze e música lado a lado com um toque**: um serviço de acessibilidade pode ligar a tela dividida sozinho. Precisa de mais uma liberação nas Configurações.
 - **Próxima curva do Waze/Maps no painel**: o mesmo "Acesso a notificações" permite ler a notificação de navegação e mostrar a próxima manobra num card.
 - **Uber/99 para motoristas**: atalho para o Uber Driver (`com.ubercab.driver`) e um card com a última notificação do app (chamada nova, mensagem). Aceitar corrida ou ver ganhos continua só no app deles.

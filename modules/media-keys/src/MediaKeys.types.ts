@@ -28,6 +28,20 @@ export type NowPlayingInfo = {
   artworkUri: string | null;
   /** Cor média da capa ("#RRGGBB"), ou null. */
   artworkColor: string | null;
+  /** Link da capa em alta resolução (https), se o player informar. */
+  artworkRemoteUri: string | null;
+  /** Botões extras do player (no Spotify: curtir, aleatório, repetir…). */
+  customActions: PlayerAction[];
+};
+
+/** Botão extra oferecido pelo próprio player. */
+export type PlayerAction = {
+  /** Código interno da ação (mandado de volta em sendCustomAction). */
+  action: string;
+  /** Nome legível, ex.: "Adicionar às Músicas Curtidas". */
+  name: string;
+  /** Ícone do próprio player, em PNG ("file://…"), ou null. */
+  iconUri: string | null;
 };
 
 export type MediaKeysEvents = {

@@ -1,4 +1,4 @@
-// Barra lateral preta, como no CarPlay/Android Auto: bateria e hora em cima,
+// Barra lateral preta, como no CarPlay/Android Auto: bateria, hora e data em cima,
 // três apps fixos no meio e o botão que alterna painel ↔ apps embaixo.
 // No modo compacto (tela dividida com o Waze), mostra também a velocidade.
 
@@ -8,7 +8,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { colors, font, SPEED_ALERT_KMH, sizes, tabular } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
 import type { InstalledApp } from '../hooks/useInstalledApps';
-import { formatClock } from '../lib/datetime';
+import { formatClock, formatDateShort } from '../lib/datetime';
 import { formatBattery, formatKmh } from '../lib/format';
 import { BatteryIcon, BoltIcon, DashboardIcon, GridIcon } from './icons';
 import { Touch } from './Touch';
@@ -49,6 +49,9 @@ export function Rail({ now, battery, dock, onOpenApp, page, onTogglePage, speedK
         )}
         <Text style={[font(23, '700'), tabular, styles.clock]} allowFontScaling={false}>
           {formatClock(now)}
+        </Text>
+        <Text style={font(11, '600', colors.text2)} numberOfLines={1} allowFontScaling={false}>
+          {formatDateShort(now)}
         </Text>
         {compact && (
           <View style={styles.speed}>

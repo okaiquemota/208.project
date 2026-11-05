@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -22,6 +24,8 @@ import java.io.FileOutputStream
 
 private const val NOW_PLAYING_EVENT = "onNowPlayingChange"
 private const val ARTWORK_MAX_PX = 600
+private const val ACTION_ICON_PX = 96
+private const val MAX_CUSTOM_ACTIONS = 4
 
 /**
  * Música no Painel 208.
@@ -74,6 +78,12 @@ class MediaKeysModule : Module() {
     Function("previous") {
       activeController()?.transportControls?.skipToPrevious()?.let { true }
         ?: sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+    }
+    // Botões extras do próprio player (no Spotify: curtir, aleatório, repetir…).
+    Function("sendCustomAction") { action: String ->
+      val c = activeController() ?: return@Function false
+      c.transportControls.sendCustomAction(action, null)
+      true
     }
     Function("seekTo") { positionMs: Double ->
       val c = activeController() ?: return@Function false
@@ -285,6 +295,20 @@ class MediaKeysModule : Module() {
     if (durationMs > 0) positionMs = positionMs.coerceAtMost(durationMs)
 
     val art = artwork(ctx, md, "$title|$artist|$album")
+    // Alguns players informam um link da capa em alta resolução.
+    val remoteArt = listOf(
+      md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI),
+      md?.getString(MediaMetadata.METADATA_KEY_ART_URI),
+      md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI),
+    ).firstOrNull { it != null && (it.startsWith("https://") || it.startsWith("http://")) }
+
+    val actions = st?.customActions.orEmpty().take(MAX_CUSTOM_ACTIONS).map { a ->
+      mapOf(
+        "action" to a.action,
+        "name" to a.name.toString(),
+        "iconUri" to actionIcon(ctx, c.packageName, a.icon),
+      )
+    }
 
     return mapOf(
       "packageName" to c.packageName,
@@ -299,7 +323,60 @@ class MediaKeysModule : Module() {
       "isPlaying" to playing,
       "artworkUri" to art?.first,
       "artworkColor" to art?.second,
+      "artworkRemoteUri" to remoteArt,
+      "customActions" to actions,
     )
+  }
+
+  private val actionIconCache = mutableMapOf<String, String?>()
+
+  /**
+   * Desenha o ícone de um botão extra do player (ele mora nos recursos do app
+   * do player) num PNG. Ícones escuros viram brancos, para aparecer no fundo
+   * escuro; ícones coloridos (ex.: coração verde de "curtido") ficam como são.
+   */
+  @Synchronized
+  private fun actionIcon(ctx: Context, packageName: String, resId: Int): String? {
+    if (resId == 0) return null
+    val key = "$packageName:$resId"
+    if (actionIconCache.containsKey(key)) return actionIconCache[key]
+    val result = try {
+      val res = ctx.packageManager.getResourcesForApplication(packageName)
+      @Suppress("DEPRECATION")
+      val drawable = res.getDrawable(resId, null)
+      val bmp = Bitmap.createBitmap(ACTION_ICON_PX, ACTION_ICON_PX, Bitmap.Config.ARGB_8888)
+      drawable.setBounds(0, 0, ACTION_ICON_PX, ACTION_ICON_PX)
+      drawable.draw(Canvas(bmp))
+      if (isDarkIcon(bmp)) {
+        bmp.eraseColor(Color.TRANSPARENT)
+        drawable.mutate().setTint(Color.WHITE)
+        drawable.draw(Canvas(bmp))
+      }
+      val dir = File(ctx.cacheDir, "acoes").apply { mkdirs() }
+      val file = File(dir, "${packageName.replace('.', '_')}_$resId.png")
+      FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+      "file://${file.absolutePath}"
+    } catch (e: Exception) {
+      null
+    }
+    actionIconCache[key] = result
+    return result
+  }
+
+  /** O ícone é quase todo preto/cinza escuro? (pensado para fundo claro) */
+  private fun isDarkIcon(bmp: Bitmap): Boolean {
+    var sum = 0.0
+    var count = 0
+    val step = 4
+    for (y in 0 until bmp.height step step) {
+      for (x in 0 until bmp.width step step) {
+        val px = bmp.getPixel(x, y)
+        if (Color.alpha(px) < 128) continue
+        sum += (0.299 * Color.red(px) + 0.587 * Color.green(px) + 0.114 * Color.blue(px)) / 255.0
+        count++
+      }
+    }
+    return count > 0 && sum / count < 0.35
   }
 
   private fun appLabel(ctx: Context, packageName: String): String =

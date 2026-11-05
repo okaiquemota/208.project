@@ -9,6 +9,7 @@ declare class MediaKeysNativeModule extends NativeModule<MediaKeysEvents> {
   next(): boolean;
   previous(): boolean;
   seekTo(positionMs: number): boolean;
+  sendCustomAction(action: string): boolean;
 
   volumeUp(): VolumeInfo;
   volumeDown(): VolumeInfo;
