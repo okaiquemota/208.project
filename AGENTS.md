@@ -30,7 +30,7 @@ Run lint and typecheck before declaring any task done.
 - Configuração nativa só por `app.json` e config plugins (`plugins/`). Nunca edite `android/`.
 - Código nativo próprio fica em módulos Expo locais (`modules/`).
 - Textos da interface e comentários em português.
-- Antes de concluir: `npm run check` (tsc + jest).
+- Antes de concluir: `npm run check` (tsc + lint + jest).
 
 ## Building with EAS
 

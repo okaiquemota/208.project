@@ -46,6 +46,30 @@ const toFix = (loc: Location.LocationObject): GpsFix => ({
   timestamp: loc.timestamp,
 });
 
+type PermissionResult = { granted: boolean; canAskAgain: boolean };
+
+/** Lê a permissão de localização e, se `ask` e ainda der, pede ao usuário. */
+async function readPermission(ask: boolean): Promise<PermissionResult> {
+  try {
+    let res = await Location.getForegroundPermissionsAsync();
+    if (!res.granted && ask && res.canAskAgain) {
+      res = await Location.requestForegroundPermissionsAsync();
+    }
+    return { granted: res.granted, canAskAgain: res.canAskAgain };
+  } catch {
+    return { granted: false, canAskAgain: true };
+  }
+}
+
+/** A localização do celular está ligada? */
+async function readServicesEnabled(): Promise<boolean> {
+  try {
+    return await Location.hasServicesEnabledAsync();
+  } catch {
+    return false;
+  }
+}
+
 export type GpsState = {
   status: GpsStatus;
   trip: TripState;
@@ -71,45 +95,42 @@ export function useGps(): GpsState {
   const watchKey = useRef(0);
 
   // 1) Permissão: confere e, se der, pede (o Android mostra o pedido dele uma vez).
-  const checkPermission = useCallback(async (ask: boolean) => {
-    try {
-      let res = await Location.getForegroundPermissionsAsync();
-      if (!res.granted && ask && res.canAskAgain) {
-        res = await Location.requestForegroundPermissionsAsync();
-      }
-      setPermission(res.granted ? 'ok' : 'negada');
-      setCanAskAgain(res.canAskAgain);
-    } catch {
-      setPermission('negada');
-    }
+  const applyPermission = useCallback((res: PermissionResult) => {
+    setPermission(res.granted ? 'ok' : 'negada');
+    setCanAskAgain(res.canAskAgain);
   }, []);
 
   useEffect(() => {
-    void checkPermission(true);
-  }, [checkPermission]);
+    let alive = true;
+    void readPermission(true).then((res) => alive && applyPermission(res));
+    return () => {
+      alive = false;
+    };
+  }, [applyPermission]);
 
   // 2) Localização do celular ligada? Confere de tempos em tempos.
   // Quando desliga, a leitura do passo 3 é encerrada; quando volta a ligar,
   // ela é criada de novo (alguns aparelhos não retomam sozinhos).
-  const checkServices = useCallback(async () => {
-    try {
-      setServicesOn(await Location.hasServicesEnabledAsync());
-    } catch {
-      setServicesOn(false);
-    }
+  const checkServices = useCallback(() => {
+    void readServicesEnabled().then(setServicesOn);
   }, []);
 
   useEffect(() => {
     if (permission !== 'ok') return;
-    void checkServices();
-    const id = setInterval(checkServices, SERVICES_CHECK_MS);
-    return () => clearInterval(id);
-  }, [permission, checkServices]);
+    let alive = true;
+    const check = () => void readServicesEnabled().then((on) => alive && setServicesOn(on));
+    check();
+    const id = setInterval(check, SERVICES_CHECK_MS);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [permission]);
 
   // Voltando para o app (ex.: depois de mexer nas configurações), confere tudo de novo.
   useAppActive(() => {
-    void checkPermission(false);
-    void checkServices();
+    void readPermission(false).then(applyPermission);
+    checkServices();
   });
 
   // 3) Leituras do GPS: precisão máxima, a cada 1 s, mesmo parado.
@@ -133,14 +154,14 @@ export function useGps(): GpsState {
       },
       () => {
         // Erro do GPS (normalmente: desligaram a localização). A checagem periódica cuida.
-        void checkServices();
+        checkServices();
       },
     )
       .then((s) => {
         if (cancelled) s.remove();
         else sub = s;
       })
-      .catch(() => void checkServices());
+      .catch(checkServices);
 
     return () => {
       cancelled = true;
@@ -163,9 +184,9 @@ export function useGps(): GpsState {
   else status = 'ok';
 
   const requestPermission = useCallback(() => {
-    if (canAskAgain) void checkPermission(true);
+    if (canAskAgain) void readPermission(true).then(applyPermission);
     else void Linking.openSettings();
-  }, [canAskAgain, checkPermission]);
+  }, [canAskAgain, applyPermission]);
 
   const openLocationSettings = useCallback(() => {
     IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.LOCATION_SOURCE_SETTINGS).catch(

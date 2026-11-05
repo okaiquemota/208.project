@@ -9,7 +9,8 @@
     "prebuild": "expo prebuild --platform android --clean",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "check": "tsc --noEmit && jest"
+    "check": "tsc --noEmit && expo lint && jest",
+    "lint": "expo lint"
   },
   "dependencies": {
     "expo": "~58.0.23",
@@ -32,6 +33,8 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/react": "~19.3.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4",
     "jest": "^30.5.2",
     "jest-expo": "~58.0.14",
     "typescript": "~6.0.3"

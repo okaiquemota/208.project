@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { AppState } from 'react-native';
 
 /**
@@ -6,13 +6,14 @@ import { AppState } from 'react-native';
  * (ex.: depois de abrir o Waze e voltar pro painel).
  */
 export function useAppActive(onActive: () => void) {
-  const callback = useRef(onActive);
-  callback.current = onActive;
+  // useEffectEvent: sempre chama a versão mais nova de onActive sem
+  // precisar recriar a inscrição no AppState a cada renderização.
+  const handleActive = useEffectEvent(onActive);
 
   useEffect(() => {
     let previous = AppState.currentState;
     const sub = AppState.addEventListener('change', (next) => {
-      if (previous !== 'active' && next === 'active') callback.current();
+      if (previous !== 'active' && next === 'active') handleActive();
       previous = next;
     });
     return () => sub.remove();

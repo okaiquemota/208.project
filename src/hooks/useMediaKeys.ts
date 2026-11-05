@@ -23,10 +23,22 @@ export type MediaControls = {
 
 const EMPTY_VOLUME: VolumeInfo = { current: 0, max: 0 };
 
+/** Lê um valor do módulo nativo sem deixar uma falha derrubar a tela. */
+function safeRead<T>(read: () => T | undefined, fallback: T): T {
+  try {
+    return read() ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useMediaKeys(): MediaControls {
   const available = MediaKeys !== null;
-  const [playing, setPlaying] = useState(false);
-  const [volume, setVolume] = useState<VolumeInfo>(EMPTY_VOLUME);
+  // Valores iniciais lidos direto do módulo; depois o timer mantém atualizado.
+  const [playing, setPlaying] = useState(() => safeRead(() => MediaKeys?.isMusicActive(), false));
+  const [volume, setVolume] = useState<VolumeInfo>(() =>
+    safeRead(() => MediaKeys?.getVolume(), EMPTY_VOLUME),
+  );
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const refresh = useCallback(() => {
@@ -41,7 +53,6 @@ export function useMediaKeys(): MediaControls {
   }, []);
 
   useEffect(() => {
-    refresh();
     const id = setInterval(refresh, POLL_MS);
     const pending = timers.current;
     return () => {
