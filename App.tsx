@@ -1,20 +1,23 @@
+// Raiz do app: tela cheia (sem barra de status nem de navegação),
+// tela sempre ligada e o painel.
+
+import { NavigationBar } from 'expo-navigation-bar';
+import { useKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { colors } from './src/config/theme';
+import { DashboardScreen } from './src/screens/DashboardScreen';
 
 export default function App() {
+  // Mantém a tela acesa enquanto o painel estiver aberto.
+  useKeepAwake();
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.bg }}>
+      <StatusBar hidden style="light" />
+      <NavigationBar hidden />
+      <DashboardScreen />
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

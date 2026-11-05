@@ -57,6 +57,16 @@ export function formatDateLong(date: Date): string {
   return `${DIAS_SEMANA[date.getDay()]}, ${date.getDate()} de ${MESES[date.getMonth()]}`;
 }
 
+/** "quinta-feira" */
+export function formatWeekday(date: Date): string {
+  return DIAS_SEMANA[date.getDay()] as string;
+}
+
+/** "5 de novembro" */
+export function formatDayMonth(date: Date): string {
+  return `${date.getDate()} de ${MESES[date.getMonth()]}`;
+}
+
 /** "qui, 5 nov" */
 export function formatDateShort(date: Date): string {
   return `${DIAS_SEMANA_CURTOS[date.getDay()]}, ${date.getDate()} ${MESES_CURTOS[date.getMonth()]}`;

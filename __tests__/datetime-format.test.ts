@@ -1,6 +1,8 @@
 import {
   formatClock,
   formatDateLong,
+  formatDayMonth,
+  formatWeekday,
   formatDateShort,
   msUntilNextMinute,
   pad2,
@@ -77,5 +79,13 @@ describe('formatação', () => {
     expect(formatBattery(0.784)).toBe('78%');
     expect(formatBattery(1)).toBe('100%');
     expect(formatBattery(-1)).toBe('--%');
+  });
+});
+
+describe('data em duas linhas', () => {
+  it('dia da semana e dia/mês separados', () => {
+    const d = new Date(2026, 10, 5);
+    expect(formatWeekday(d)).toBe('quinta-feira');
+    expect(formatDayMonth(d)).toBe('5 de novembro');
   });
 });
