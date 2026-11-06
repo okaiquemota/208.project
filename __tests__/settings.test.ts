@@ -25,20 +25,18 @@ describe('configurações: leitura do que está salvo', () => {
         home: { main: 'velocidade', side: ['clima', 'foguete', 'clima'] },
         accent: 'roxo',
         speedAlertKmh: 333,
-        preferredPlayer: 'com.spotify.music',
       }),
     );
     expect(s.home.main).toBe('velocidade');
     expect(s.home.side).toEqual(['clima', null, null]);
     expect(s.accent).toBe('roxo');
     expect(s.speedAlertKmh).toBe(DEFAULT_SETTINGS.speedAlertKmh);
-    expect(s.preferredPlayer).toBe('com.spotify.music');
   });
 
-  it('cor e player inválidos voltam ao padrão', () => {
-    const s = parseSettings(JSON.stringify({ accent: 'dourado', preferredPlayer: 'spotify; rm -rf' }));
+  it('cor inválida volta ao padrão; player salvo de versões antigas é ignorado (sempre automático)', () => {
+    const s = parseSettings(JSON.stringify({ accent: 'dourado', preferredPlayer: 'com.spotify.music' }));
     expect(s.accent).toBe('azul');
-    expect(s.preferredPlayer).toBeNull();
+    expect('preferredPlayer' in s).toBe(false);
   });
 
   it('fundo: papel de parede (padrão) ou preto; valor estranho volta ao padrão', () => {

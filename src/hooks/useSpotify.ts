@@ -1,18 +1,27 @@
-// Spotify por dentro do painel: conectar, navegar pelas listas que o Spotify
-// monta para carro (tocados recentemente, feito para você, playlists…),
-// abrir pastas, voltar e tocar. Também acompanha o player do Spotify (música,
-// capa grande, curtida, aleatório, repetir). Usa o módulo nativo SpotifyRemote.
+// Spotify por dentro do painel: conectar, escolher música como no Spotify do
+// CarPlay (abas de seções, fileiras de capas, playlist aberta com Tocar e
+// Aleatório) e acompanhar o player do Spotify (música, capa grande, curtida,
+// aleatório, repetir, de onde está tocando). Usa o módulo nativo SpotifyRemote.
 
 import { useCallback, useEffect, useState } from 'react';
 
 import { type SpotifyCommand, SpotifyRemote } from '../../modules/media-keys';
 import { SPOTIFY_CLIENT_ID, SPOTIFY_CONTENT_TYPE, SPOTIFY_REDIRECT_URI } from '../config/spotify';
-import { parseSpotifyPage, type SpotifyItem, spotifyErrorMessage } from '../lib/spotify';
+import {
+  HIGHLIGHTS_TAB,
+  parseSpotifyPage,
+  type SpotifyItem,
+  spotifyErrorMessage,
+  splitRoot,
+  splitSection,
+} from '../lib/spotify';
 import { parseSpotifyPlayer, type SpotifyPlayerState } from '../lib/spotifyPlayer';
 import { readText, writeText } from '../lib/storage';
 
 /** Lembra que o usuário já conectou uma vez (aí reconecta sozinho). */
 const LINKED_KEY = 'painel208.spotify.linked';
+/** Quantas capas cada fileira mostra. */
+const SHELF_MAX = 20;
 
 export type SpotifyStatus =
   /** Código nativo fora do build. */
@@ -24,11 +33,17 @@ export type SpotifyStatus =
   | 'conectado'
   | 'erro';
 
-/** Uma "tela" da navegação: a lista inicial ou o que tem dentro de um item. */
-export type SpotifyLevel = {
-  title: string;
-  /** O item que foi aberto (null na lista inicial). */
-  parent: SpotifyItem | null;
+/** Uma fileira de capas (title null = grade sem título). */
+export type SpotifyShelf = {
+  id: string;
+  title: string | null;
+  items: SpotifyItem[];
+  loading: boolean;
+};
+
+/** Um item aberto (playlist, álbum, pasta) com o que tem dentro. */
+export type SpotifyDetail = {
+  item: SpotifyItem;
   items: SpotifyItem[];
 };
 
@@ -57,11 +72,16 @@ function initialStatus(): SpotifyStatus {
   }
 }
 
+const children = async (id: string) => parseSpotifyPage(await SpotifyRemote!.getChildren(id, 0)).items;
+
 export function useSpotify() {
   const [status, setStatus] = useState<SpotifyStatus>(initialStatus);
   const [error, setError] = useState<string | null>(null);
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
-  const [stack, setStack] = useState<SpotifyLevel[]>([]);
+  const [tabs, setTabs] = useState<SpotifyItem[]>([]);
+  const [tabId, setTabId] = useState<string | null>(null);
+  const [content, setContent] = useState<Record<string, SpotifyShelf[]>>({});
+  const [details, setDetails] = useState<SpotifyDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<Record<string, string | null>>({});
   const [player, setPlayer] = useState<SpotifyPlayerState | null>(readPlayer);
@@ -83,18 +103,71 @@ export function useSpotify() {
     setStatus(code === 'ERR_DESCONECTADO' ? 'desconectado' : 'erro');
   }, []);
 
+  /** Carrega o conteúdo de uma aba: capas soltas + fileiras (cada uma com suas capas). */
+  const loadTab = useCallback(
+    async (tab: SpotifyItem, loose: SpotifyItem[]) => {
+      if (!SpotifyRemote) return;
+      if (tab.id === HIGHLIGHTS_TAB) {
+        setContent((c) => ({ ...c, [tab.id]: [{ id: `${tab.id}#grade`, title: null, items: loose, loading: false }] }));
+        return;
+      }
+      setLoading(true);
+      try {
+        const { tiles, shelves } = splitSection(await children(tab.id));
+        const initial: SpotifyShelf[] = [
+          ...(tiles.length ? [{ id: `${tab.id}#grade`, title: null, items: tiles, loading: false }] : []),
+          ...shelves.map((s) => ({ id: s.id, title: s.title, items: [], loading: true })),
+        ];
+        setContent((c) => ({ ...c, [tab.id]: initial }));
+        // Fileiras em paralelo; cada uma aparece quando chega.
+        await Promise.all(
+          shelves.map(async (shelf) => {
+            let items: SpotifyItem[] = [];
+            try {
+              items = (await children(shelf.id)).slice(0, SHELF_MAX);
+            } catch {
+              items = [];
+            }
+            setContent((c) => ({
+              ...c,
+              [tab.id]: (c[tab.id] ?? []).map((s) => (s.id === shelf.id ? { ...s, items, loading: false } : s)),
+            }));
+          }),
+        );
+      } catch (e) {
+        fail(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fail],
+  );
+
+  /** Lista inicial: as abas (e a aba "Destaques" com o que vier solto). */
   const loadRoot = useCallback(async () => {
     if (!SpotifyRemote) return;
     setLoading(true);
     try {
       const page = parseSpotifyPage(await SpotifyRemote.getRecommended(SPOTIFY_CONTENT_TYPE));
-      setStack([{ title: 'Início', parent: null, items: page.items }]);
+      const { tabs: folders, loose } = splitRoot(page.items);
+      const all: SpotifyItem[] = [
+        ...(loose.length
+          ? [{ id: HIGHLIGHTS_TAB, uri: '', title: 'Destaques', subtitle: '', playable: false, hasChildren: true, image: null }]
+          : []),
+        ...folders,
+      ];
+      setTabs(all);
+      setContent({});
+      setDetails([]);
+      const first = all[0];
+      setTabId(first?.id ?? null);
+      if (first) await loadTab(first, loose);
     } catch (e) {
       fail(e);
     } finally {
       setLoading(false);
     }
-  }, [fail]);
+  }, [fail, loadTab]);
 
   const connect = useCallback(async () => {
     if (!SpotifyRemote) return;
@@ -122,46 +195,51 @@ export function useSpotify() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Abre um item (seção/pasta) ou toca, se for só tocável. */
+  /** Troca de aba (carrega na primeira vez). */
+  const selectTab = useCallback(
+    (id: string) => {
+      setTabId(id);
+      setDetails([]);
+      const tab = tabs.find((t) => t.id === id);
+      if (tab && !content[id]) void loadTab(tab, []);
+    },
+    [tabs, content, loadTab],
+  );
+
+  /** Toca um item: shuffle true = aleatório, false = em ordem, null = como está. */
+  const playItem = useCallback(
+    async (item: SpotifyItem, shuffle: boolean | null = null) => {
+      try {
+        await SpotifyRemote?.play(item.id, shuffle);
+      } catch (e) {
+        fail(e);
+      }
+    },
+    [fail],
+  );
+
+  /** Abre um item (playlist, álbum, pasta) ou toca, se for só tocável. */
   const open = useCallback(
     async (item: SpotifyItem) => {
       if (!SpotifyRemote) return;
       if (!item.hasChildren) {
-        if (item.playable) {
-          try {
-            await SpotifyRemote.play(item.id);
-          } catch (e) {
-            fail(e);
-          }
-        }
+        if (item.playable) await playItem(item);
         return;
       }
       setLoading(true);
       try {
-        const page = parseSpotifyPage(await SpotifyRemote.getChildren(item.id, 0));
-        setStack((s) => [...s, { title: item.title, parent: item, items: page.items }]);
+        const items = await children(item.id);
+        setDetails((d) => [...d, { item, items }]);
       } catch (e) {
         fail(e);
       } finally {
         setLoading(false);
       }
     },
-    [fail],
+    [fail, playItem],
   );
 
-  /** Toca um item (ex.: "Tocar tudo" de uma playlist aberta). */
-  const play = useCallback(
-    async (item: SpotifyItem) => {
-      try {
-        await SpotifyRemote?.play(item.id);
-      } catch (e) {
-        fail(e);
-      }
-    },
-    [fail],
-  );
-
-  const back = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), []);
+  const back = useCallback(() => setDetails((d) => d.slice(0, -1)), []);
 
   /** Comando no player do Spotify (tocar/pausar, pular, curtir, aleatório…). */
   const command = useCallback(
@@ -174,11 +252,16 @@ export function useSpotify() {
     [fail],
   );
 
-  // Capas dos itens da tela atual que ainda não foram carregadas.
-  const current = stack[stack.length - 1] ?? null;
-  const missing = (current?.items ?? [])
+  // O que está na tela agora: a playlist aberta ou as fileiras da aba.
+  const detail = details[details.length - 1] ?? null;
+  const shelves = tabId ? (content[tabId] ?? []) : [];
+
+  // Capas que ainda não foram carregadas (só as que estão na tela).
+  const visible = detail ? [detail.item, ...detail.items] : shelves.flatMap((s) => s.items);
+  const missing = visible
     .map((i) => i.image)
     .filter((raw): raw is string => !!raw && !(raw in images))
+    .filter((raw, i, all) => all.indexOf(raw) === i)
     .join('\n');
   useEffect(() => {
     if (!missing || !SpotifyRemote) return;
@@ -205,15 +288,22 @@ export function useSpotify() {
     error,
     /** Código e texto original do erro (em letra pequena, para diagnóstico). */
     errorDetail,
-    current,
-    depth: stack.length,
+    /** Abas do topo (seções do Spotify). */
+    tabs,
+    tabId,
+    /** Fileiras da aba escolhida. */
+    shelves,
+    /** Item aberto (playlist, álbum…), ou null. */
+    detail,
+    depth: details.length,
     loading,
     images,
     /** Música do Spotify agora (null se desconectado ou nada carregado). */
     player: status === 'conectado' ? player : null,
     connect,
+    selectTab,
     open,
-    play,
+    playItem,
     back,
     command,
   };

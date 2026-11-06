@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="painel208_split_label">Painel 208: Waze + música</string>
+  <string name="painel208_split_summary">Abre o Waze e o Painel 208 lado a lado com um toque.</string>
+  <string name="painel208_split_description">Usado só para montar a tela dividida (Waze de um lado, Painel 208 do outro) quando você toca no Waze no painel. O Painel 208 não lê o conteúdo da tela nem o que você digita.</string>
+</resources>

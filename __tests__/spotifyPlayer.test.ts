@@ -28,6 +28,8 @@ const raw = {
   canLike: true,
   artworkUri: 'file:///capa.jpg',
   artworkColor: '#7A4A8C',
+  contextTitle: 'Músicas Curtidas',
+  contextUri: 'spotify:user:x:collection',
 };
 
 const media = (over: Partial<NowPlayingInfo> = {}): NowPlayingInfo => ({
@@ -104,6 +106,7 @@ describe('spotifyToNowPlaying', () => {
     expect(np.isPlaying).toBe(true);
     expect(np.playbackSpeed).toBe(1);
     expect(np.customActions).toHaveLength(3);
+    expect(np.context).toBe('Músicas Curtidas');
   });
 
   it('pausado: velocidade 0 (a barra para)', () => {

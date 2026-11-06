@@ -1,13 +1,15 @@
 // Player de música no estilo do Spotify / CarPlay:
 // - a capa, bem desfocada, vira o fundo do card inteiro;
-// - a capa nítida fica à esquerda, com o título e o artista centralizados ao lado;
-// - embaixo, a barra de progresso com bolinha e os botões (play branco e
-//   redondo). Dos lados, os botões do próprio player (curtir, aleatório) ou,
-//   no modo compacto (tela dividida), o volume.
+// - capa nítida e, ao lado (ou embaixo, no formato vertical), título e artista;
+// - "Tocando de [playlist]" quando o Spotify informa de onde está tocando;
+// - barra de progresso que anda lisa, play branco e redondo, e dos lados os
+//   botões do próprio player (curtir, aleatório) ou, no compacto, o volume.
+// Tudo com movimento: troca de música desliza, capa entra suave, botões com mola.
 
 import { Image } from 'expo-image';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { colors, font, sizes, tabular } from '../config/theme';
@@ -35,20 +37,25 @@ import {
   VolumeDownIcon,
   VolumeUpIcon,
 } from './icons';
+import { enterText, exitFast, PlayingBars, usePop } from './motion';
 import { Touch } from './Touch';
 
 type Props = {
   media: MediaState;
   /** Ícone do player (ex.: Spotify), já carregado da lista de apps. */
   playerIcon: string | null;
-  /** Nome do player padrão (primeiro app de música instalado). */
+  /** Nome do player padrão (o Spotify, se instalado). */
   defaultPlayerName: string | null;
   /** Abre o player (Spotify etc.). */
   onOpenPlayer: () => void;
   compact?: boolean;
+  /** "vertical": capa em cima e texto embaixo (coluna estreita da tela Música). */
+  layout?: 'horizontal' | 'vertical';
 };
 
 const PAD = 20;
+/** Altura do bloco de baixo: progresso + botões. */
+const BOTTOM_BLOCK = 118;
 /** Verde do Spotify: botão ligado (coração aceso, aleatório ligado…). */
 const ACTIVE_GREEN = '#1ED760';
 const GLYPHS = {
@@ -58,11 +65,10 @@ const GLYPHS = {
   repeat: RepeatIcon,
   'repeat-one': RepeatOneIcon,
 } as const;
-/** Altura do bloco de baixo: progresso + botões. */
-const BOTTOM_BLOCK = 118;
 
-export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPlayer, compact }: Props) {
+export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPlayer, compact, layout = 'horizontal' }: Props) {
   const np = media.nowPlaying;
+  const vertical = layout === 'vertical';
   const now = useNow(500, !!np?.isPlaying);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const onLayout = (e: LayoutChangeEvent) =>
@@ -92,14 +98,20 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
   const artUri = np?.artworkRemoteUri ?? np?.artworkUri ?? null;
   const playerName = np?.appName ?? defaultPlayerName ?? 'Música';
   const tint = tintFromArtwork(np?.artworkColor ?? null, '#26324D');
+  const sourceLabel = np?.context
+    ? `TOCANDO DE ${np.context.toUpperCase()}`
+    : compact || vertical
+      ? playerName.toUpperCase()
+      : `TOCANDO NO ${playerName.toUpperCase()}`;
 
-  // Capa: o maior quadrado que cabe em cima dos botões, deixando espaço pro texto.
-  const art = Math.max(
-    90,
-    Math.min(box.h - PAD * 2 - BOTTOM_BLOCK - 10, box.w * (compact ? 0.4 : 0.42), 250),
-  );
+  // Capa: o maior quadrado que cabe, deixando espaço pro texto e os botões.
+  // No vertical: tira o bloco de baixo (botões menores), o texto (~108) e os espaços.
+  const art = vertical
+    ? Math.max(80, Math.min(box.w - PAD * 2, box.h - PAD * 2 - (BOTTOM_BLOCK - 8) - 108, 230))
+    : Math.max(90, Math.min(box.h - PAD * 2 - BOTTOM_BLOCK - 10, box.w * (compact ? 0.4 : 0.42), 250));
 
   const [leftAction, rightAction] = pickSideActions(np?.customActions ?? []);
+  const showVolume = compact && !vertical;
 
   return (
     <View style={styles.card} onLayout={onLayout}>
@@ -110,7 +122,7 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           blurRadius={60}
-          transition={400}
+          transition={500}
           cachePolicy={np?.artworkRemoteUri ? 'memory-disk' : 'none'}
         />
       ) : null}
@@ -125,19 +137,21 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
       </Svg>
 
       <View style={styles.content}>
-        <View style={styles.top}>
-          {/* Capa nítida (tocar abre o player) */}
-          <Touch onPress={onOpenPlayer} accessibilityLabel={`Abrir o ${playerName}`}>
+        <View style={[styles.top, vertical && styles.topVertical]}>
+          {/* Capa nítida (tocar abre o player). Música nova: a capa entra com um zoom suave. */}
+          <Touch onPress={onOpenPlayer} accessibilityLabel={`Abrir o ${playerName}`} pressScale={0.97}>
             <View style={[styles.art, { width: art, height: art }]}>
               {artUri ? (
-                <Image
-                  source={artUri}
-                  placeholder={np?.artworkRemoteUri ? np.artworkUri : undefined}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                  transition={250}
-                  cachePolicy={np?.artworkRemoteUri ? 'memory-disk' : 'none'}
-                />
+                <Animated.View key={artUri} entering={FadeIn.duration(350)} style={StyleSheet.absoluteFill}>
+                  <Image
+                    source={artUri}
+                    placeholder={np?.artworkRemoteUri ? np.artworkUri : undefined}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={250}
+                    cachePolicy={np?.artworkRemoteUri ? 'memory-disk' : 'none'}
+                  />
+                </Animated.View>
               ) : (
                 <View style={styles.artEmpty}>
                   <MusicIcon size={art * 0.4} color="rgba(255,255,255,0.4)" />
@@ -146,32 +160,40 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
             </View>
           </Touch>
 
-          {/* Player, título e artista, centralizados com a capa */}
-          <View style={styles.info}>
+          {/* Player, título e artista */}
+          <View style={[styles.info, vertical && styles.infoVertical]}>
             <View style={styles.source}>
               {playerIcon ? (
                 <Image source={playerIcon} style={styles.sourceIcon} contentFit="contain" />
               ) : (
                 <MusicIcon size={16} color={colors.text2} />
               )}
-              <Text style={font(11, '700', colors.text2)} numberOfLines={1} allowFontScaling={false}>
-                {compact ? playerName.toUpperCase() : `TOCANDO NO ${playerName.toUpperCase()}`}
+              <Text style={[font(11, '700', colors.text2), styles.flexShrink]} numberOfLines={1} allowFontScaling={false}>
+                {sourceLabel}
               </Text>
+              {hasTrack && <PlayingBars color={ACTIVE_GREEN} playing={media.playing} size={11} />}
             </View>
-            <Text
-              style={font(compact ? 22 : 28, '800')}
-              numberOfLines={2}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-              allowFontScaling={false}
-            >
-              {title}
-            </Text>
-            <Text style={font(compact ? 16 : 18, '600', colors.text2)} numberOfLines={1} allowFontScaling={false}>
-              {subtitle}
-            </Text>
+            {/* Música nova: título e artista entram deslizando */}
+            <Animated.View key={`${title}|${subtitle}`} entering={enterText} exiting={exitFast}>
+              <Text
+                style={[font(compact || vertical ? 21 : 28, '800'), vertical && styles.centerText]}
+                numberOfLines={vertical ? 1 : 2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+                allowFontScaling={false}
+              >
+                {title}
+              </Text>
+              <Text
+                style={[font(compact || vertical ? 15 : 18, '600', colors.text2), vertical && styles.centerText]}
+                numberOfLines={1}
+                allowFontScaling={false}
+              >
+                {subtitle}
+              </Text>
+            </Animated.View>
             {action && (
-              <Touch onPress={action.onPress} accessibilityLabel={action.label} style={styles.actionButton}>
+              <Touch onPress={action.onPress} accessibilityLabel={action.label} style={[styles.actionButton, vertical && styles.actionCentered]}>
                 <Text style={font(15, '800', '#000')} allowFontScaling={false}>
                   {action.label}
                 </Text>
@@ -195,33 +217,37 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
 
         {/* Controles */}
         <View style={styles.controls}>
-          {compact ? (
+          {showVolume ? (
             <SideButton onPress={media.volumeDown} label="Diminuir volume" disabled={!media.available}>
               <VolumeDownIcon size={28} color={colors.text} />
             </SideButton>
           ) : (
-            <ActionButton action={leftAction} onPress={media.sendAction} />
+            <ActionButton action={leftAction} onPress={media.sendAction} small={vertical} />
           )}
-          <SideButton onPress={media.previous} label="Música anterior" disabled={!media.available}>
-            <PreviousIcon size={36} color={colors.text} />
+          <SideButton onPress={media.previous} label="Música anterior" disabled={!media.available} small={vertical}>
+            <PreviousIcon size={vertical ? 30 : 36} color={colors.text} />
           </SideButton>
           <Touch
             onPress={media.playPause}
             disabled={!media.available}
             accessibilityLabel={media.playing ? 'Pausar' : 'Tocar'}
-            style={styles.playButton}
+            pressScale={0.88}
+            style={[styles.playButton, vertical && styles.playButtonSmall]}
           >
-            {media.playing ? <PauseIcon size={32} color="#000" /> : <PlayIcon size={34} color="#000" />}
+            {/* Troca play/pause com um "pulo" */}
+            <Animated.View key={media.playing ? 'pause' : 'play'} entering={ZoomIn.springify().damping(14)}>
+              {media.playing ? <PauseIcon size={30} color="#000" /> : <PlayIcon size={32} color="#000" />}
+            </Animated.View>
           </Touch>
-          <SideButton onPress={media.next} label="Próxima música" disabled={!media.available}>
-            <NextIcon size={36} color={colors.text} />
+          <SideButton onPress={media.next} label="Próxima música" disabled={!media.available} small={vertical}>
+            <NextIcon size={vertical ? 30 : 36} color={colors.text} />
           </SideButton>
-          {compact ? (
+          {showVolume ? (
             <SideButton onPress={media.volumeUp} label="Aumentar volume" disabled={!media.available}>
               <VolumeUpIcon size={28} color={colors.text} />
             </SideButton>
           ) : (
-            <ActionButton action={rightAction} onPress={media.sendAction} />
+            <ActionButton action={rightAction} onPress={media.sendAction} small={vertical} />
           )}
         </View>
       </View>
@@ -251,29 +277,54 @@ function SideButton({
   onPress,
   label,
   disabled,
+  small,
   children,
 }: {
   onPress: () => void;
   label: string;
   disabled?: boolean;
+  small?: boolean;
   children: ReactNode;
 }) {
   return (
-    <Touch onPress={onPress} disabled={disabled} accessibilityLabel={label} style={styles.sideButton}>
+    <Touch
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityLabel={label}
+      visualSize={small ? 52 : undefined}
+      style={[styles.sideButton, small && styles.sideButtonSmall]}
+    >
       {children}
     </Touch>
   );
 }
 
 /** Botão extra do player (ícone do próprio app) ou um espaço vazio do mesmo tamanho. */
-function ActionButton({ action, onPress }: { action: PlayerAction | null; onPress: (a: string) => void }) {
-  if (!action) return <View style={styles.sideButton} />;
+function ActionButton({
+  action,
+  onPress,
+  small,
+}: {
+  action: PlayerAction | null;
+  onPress: (a: string) => void;
+  small?: boolean;
+}) {
+  // Coração/aleatório "pulsam" quando ligam ou desligam.
+  const pop = usePop(action?.active);
+  if (!action) return <View style={[styles.sideButton, small && styles.sideButtonSmall]} />;
   const Glyph = action.glyph ? GLYPHS[action.glyph] : null;
   return (
-    <Touch onPress={() => onPress(action.action)} accessibilityLabel={action.name} style={styles.sideButton}>
+    <Touch
+      onPress={() => onPress(action.action)}
+      accessibilityLabel={action.name}
+      visualSize={small ? 52 : undefined}
+      style={[styles.sideButton, small && styles.sideButtonSmall]}
+    >
       {Glyph ? (
         <>
-          <Glyph size={28} color={action.active ? ACTIVE_GREEN : colors.text} />
+          <Animated.View style={pop}>
+            <Glyph size={small ? 24 : 28} color={action.active ? ACTIVE_GREEN : colors.text} />
+          </Animated.View>
           {/* Pontinho embaixo quando ligado, como no Spotify */}
           {action.active && action.glyph !== 'heart-filled' ? <View style={styles.activeDot} /> : null}
         </>
@@ -288,14 +339,27 @@ function ActionButton({ action, onPress }: { action: PlayerAction | null; onPres
   );
 }
 
+/**
+ * Barra de progresso que anda lisa: entre uma leitura e outra (a cada 0,5 s)
+ * ela desliza até o valor novo em vez de pular.
+ */
 function ProgressBar({ ratio, visible }: { ratio: number; visible: boolean }) {
-  const pct = `${Math.max(0, Math.min(1, ratio)) * 100}%` as const;
+  const r = Math.max(0, Math.min(1, ratio));
+  const value = useSharedValue(r);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    // Pulo grande (música nova, avançou): vai rápido; andando normal: linear.
+    const jump = Math.abs(value.value - r) > 0.05;
+    value.value = withTiming(r, { duration: jump ? 250 : 500, easing: jump ? Easing.out(Easing.cubic) : Easing.linear });
+  }, [r, value]);
+  const fill = useAnimatedStyle(() => ({ width: value.value * width }));
+  const knob = useAnimatedStyle(() => ({ transform: [{ translateX: value.value * width - 6 }] }));
   return (
-    <View style={styles.progressTrack}>
+    <View style={styles.progressTrack} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
       {visible && (
         <>
-          <View style={[styles.progressFill, { width: pct }]} />
-          <View style={[styles.knob, { left: pct }]} />
+          <Animated.View style={[styles.progressFill, fill]} />
+          <Animated.View style={[styles.knob, knob]} />
         </>
       )}
     </View>
@@ -319,6 +383,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 18,
   },
+  topVertical: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 12,
+  },
   art: {
     borderRadius: 12,
     overflow: 'hidden',
@@ -338,6 +407,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     gap: 4,
+  },
+  infoVertical: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  centerText: {
+    textAlign: 'center',
+  },
+  flexShrink: {
+    flexShrink: 1,
   },
   source: {
     flexDirection: 'row',
@@ -360,6 +442,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  actionCentered: {
+    alignSelf: 'center',
+  },
   progressBlock: {
     marginTop: 14,
   },
@@ -379,9 +464,9 @@ const styles = StyleSheet.create({
   },
   knob: {
     position: 'absolute',
+    left: 0,
     width: 12,
     height: 12,
-    marginLeft: -6,
     borderRadius: 6,
     backgroundColor: colors.text,
   },
@@ -402,6 +487,11 @@ const styles = StyleSheet.create({
     borderRadius: sizes.minTouch / 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sideButtonSmall: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
   activeDot: {
     position: 'absolute',
@@ -425,5 +515,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.text,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  playButtonSmall: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
 });

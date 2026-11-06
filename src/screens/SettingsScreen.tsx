@@ -1,5 +1,5 @@
-// Ajustes: montar a tela de início, cor de destaque, alerta de velocidade,
-// player preferido e permissões. Tudo é salvo na hora, no celular.
+// Ajustes: montar a tela de início, cor de destaque, alerta de velocidade e
+// permissões. Tudo é salvo na hora, no celular.
 // (É usada com o carro parado, então pode rolar a tela.)
 
 import Constants from 'expo-constants';
@@ -11,7 +11,7 @@ import { Touch } from '../components/Touch';
 import { colors, font, sizes } from '../config/theme';
 import type { GpsState } from '../hooks/useGps';
 import type { MediaState } from '../hooks/useMedia';
-import type { MediaLibrary } from '../hooks/useMediaLibrary';
+import type { SplitScreenState } from '../hooks/useSplitScreen';
 import {
   ACCENTS,
   type AccentId,
@@ -29,11 +29,11 @@ import { useAccent, useSettings } from '../state/settings';
 type Props = {
   gps: GpsState;
   media: MediaState;
-  library: MediaLibrary;
+  split: SplitScreenState;
   onDone: () => void;
 };
 
-export function SettingsScreen({ gps, media, library, onDone }: Props) {
+export function SettingsScreen({ gps, media, split, onDone }: Props) {
   const { settings, update } = useSettings();
   const accent = useAccent();
   const { main, side } = settings.home;
@@ -159,24 +159,6 @@ export function SettingsScreen({ gps, media, library, onDone }: Props) {
           </Chips>
         </Section>
 
-        <Section title="Música">
-          <Label>Player que o painel acompanha</Label>
-          <Chips>
-            <Chip label="Automático" selected={library.preferred === null} onPress={() => library.select(null)} />
-            {library.entries.map((app) => (
-              <Chip
-                key={app.packageName}
-                label={app.label}
-                selected={library.preferred === app.packageName}
-                onPress={() => library.select(app.packageName)}
-              />
-            ))}
-          </Chips>
-          <Text style={[font(12, '600', colors.text3), styles.hint]}>
-            No automático, o painel mostra o app que estiver tocando.
-          </Text>
-        </Section>
-
         <Section title="Permissões">
           <Permission
             title="Localização"
@@ -187,11 +169,20 @@ export function SettingsScreen({ gps, media, library, onDone }: Props) {
           />
           <Permission
             title="Acesso a notificações"
-            detail="Capa, título e progresso da música"
+            detail="Música, próxima curva e WhatsApp"
             ok={media.hasAccess}
             action="Liberar"
             onAction={media.openAccessSettings}
           />
+          {split.available && (
+            <Permission
+              title="Waze + música (tela dividida)"
+              detail="Tocar no Waze abre o Waze e o painel lado a lado"
+              ok={split.enabled}
+              action="Ativar"
+              onAction={split.openSettings}
+            />
+          )}
           <Permission
             title="GPS ligado"
             detail="A localização do celular precisa estar ativa"

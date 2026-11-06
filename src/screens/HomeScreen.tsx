@@ -2,6 +2,7 @@
 // velocidade) e uma coluna com até 3 widgets, tudo escolhido nos Ajustes.
 
 import { StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { MessagesWidget, NextTurnWidget } from '../components/CarNotificationWidgets';
 import { SpeedWidget, TripWidget, VolumeWidget } from '../components/InstrumentCards';
@@ -14,6 +15,7 @@ import {
   ShortcutsWidget,
   WeatherWidget,
 } from '../components/MoreWidgets';
+import { enterItem } from '../components/motion';
 import { NowPlayingCard } from '../components/NowPlayingCard';
 import type { WazeActions } from '../components/MapHud';
 import { WazeMap } from '../components/WazeMap';
@@ -86,16 +88,57 @@ export function HomeScreen(props: HomeProps) {
   const widgets = side.filter((w): w is SideWidgetId => w !== null);
 
   // Tela dividida (Waze ao lado) ou coluna toda vazia: só o card principal.
-  if (props.compact || widgets.length === 0) return <View style={styles.full}>{mainCard}</View>;
+  // Tela dividida (Waze do outro lado): como o painel do CarPlay, a próxima
+  // curva em cima (quando há rota) e a música embaixo.
+  if (props.compact) {
+    const nav = props.notifications.navigation;
+    return (
+      <View style={styles.dashboard}>
+        {nav && (
+          <Animated.View key="curva" entering={enterItem(0)} style={styles.turnSlot}>
+            <NextTurnWidget
+              nav={nav}
+              hasAccess={props.notificationAccess}
+              onOpenAccess={props.onOpenAccess}
+              onOpen={props.notifications.open}
+            />
+          </Animated.View>
+        )}
+        <Animated.View entering={enterItem(nav ? 1 : 0)} style={styles.full}>
+          {main === 'velocidade' ? (
+            <SpeedWidget gps={props.gps} large />
+          ) : (
+            <NowPlayingCard
+              media={props.media}
+              playerIcon={props.playerIcon}
+              defaultPlayerName={props.defaultPlayerName}
+              onOpenPlayer={props.onOpenPlayer}
+              compact
+            />
+          )}
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (widgets.length === 0) {
+    return (
+      <Animated.View entering={enterItem(0)} style={styles.full}>
+        {mainCard}
+      </Animated.View>
+    );
+  }
 
   return (
     <>
-      <View style={styles.main}>{mainCard}</View>
+      <Animated.View entering={enterItem(0)} style={styles.main}>
+        {mainCard}
+      </Animated.View>
       <View style={styles.side}>
-        {widgets.map((id) => (
-          <View key={id} style={COMPACT_WIDGETS.includes(id) ? styles.slotCompact : styles.slot}>
+        {widgets.map((id, i) => (
+          <Animated.View key={id} entering={enterItem(i + 1)} style={COMPACT_WIDGETS.includes(id) ? styles.slotCompact : styles.slot}>
             {renderSideWidget(id, props)}
-          </View>
+          </Animated.View>
         ))}
       </View>
     </>
@@ -150,6 +193,13 @@ function renderSideWidget(id: SideWidgetId, p: HomeProps) {
 const styles = StyleSheet.create({
   full: {
     flex: 1,
+  },
+  dashboard: {
+    flex: 1,
+    gap: sizes.gap,
+  },
+  turnSlot: {
+    height: 112,
   },
   main: {
     flex: 1.9,

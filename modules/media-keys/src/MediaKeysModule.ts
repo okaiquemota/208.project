@@ -32,6 +32,11 @@ declare class MediaKeysNativeModule extends NativeModule<MediaKeysEvents> {
   /** Abre um link no app indicado (ao lado, se estiver em tela dividida). */
   openUrlAdjacent(url: string, packageName: string | null): boolean;
   isInMultiWindow(): boolean;
+  /** O serviço "Waze + música" (acessibilidade) está ligado? */
+  isSplitServiceEnabled(): boolean;
+  openAccessibilitySettings(): boolean;
+  /** Abre o app e o painel lado a lado (app à esquerda). */
+  openSplitWith(packageName: string): 'ao-lado' | 'dividindo' | 'sem-servico' | 'erro';
 }
 
 /**

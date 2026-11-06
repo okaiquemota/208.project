@@ -32,6 +32,8 @@ export type NowPlayingInfo = {
   artworkRemoteUri: string | null;
   /** Botões extras do player (no Spotify: curtir, aleatório, repetir…). */
   customActions: PlayerAction[];
+  /** De onde está tocando (playlist, álbum…), quando o player informa. */
+  context?: string | null;
 };
 
 /** Ícones desenhados pelo próprio painel (para os botões do Spotify). */

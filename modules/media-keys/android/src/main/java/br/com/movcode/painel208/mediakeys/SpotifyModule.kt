@@ -14,6 +14,7 @@ import com.spotify.protocol.types.Image
 import com.spotify.protocol.types.ImageUri
 import com.spotify.protocol.types.ListItem
 import com.spotify.protocol.types.ListItems
+import com.spotify.protocol.types.PlayerContext
 import com.spotify.protocol.types.PlayerState
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
@@ -45,6 +46,9 @@ class SpotifyModule : Module() {
   // ---- Player (o que está tocando no Spotify) ----
   // Tudo abaixo é mexido só na thread principal (os avisos do SDK chegam nela).
   private var playerSub: Subscription<PlayerState>? = null
+  private var contextSub: Subscription<PlayerContext>? = null
+  /** De onde a música está tocando (playlist, álbum, rádio…). */
+  private var playerContext: PlayerContext? = null
   private var state: PlayerState? = null
   private var stateAt = 0L
   private var trackUri: String? = null
@@ -144,17 +148,29 @@ class SpotifyModule : Module() {
         .setErrorCallback { e -> promise.reject("ERR_SPOTIFY", e.message ?: "Erro do Spotify", e) }
     }
 
-    /** Toca um item (playlist, álbum, mix, música…). */
-    AsyncFunction("play") { id: String, promise: Promise ->
+    /**
+     * Toca um item (playlist, álbum, mix, música…). shuffle: true = aleatório,
+     * false = em ordem, null = mantém como está.
+     */
+    AsyncFunction("play") { id: String, shuffle: Boolean?, promise: Promise ->
       val r = connected(promise) ?: return@AsyncFunction
       val item = itemsById[id]
       if (item == null) {
         promise.reject("ERR_ITEM", "Item não encontrado (abra a lista de novo)", null)
         return@AsyncFunction
       }
-      r.contentApi.playContentItem(item)
-        .setResultCallback { promise.resolve(true) }
-        .setErrorCallback { e -> promise.reject("ERR_SPOTIFY", e.message ?: "Erro do Spotify", e) }
+      val start = {
+        r.contentApi.playContentItem(item)
+          .setResultCallback { promise.resolve(true) }
+          .setErrorCallback { e -> promise.reject("ERR_SPOTIFY", e.message ?: "Erro do Spotify", e) }
+      }
+      if (shuffle == null) {
+        start()
+      } else {
+        r.playerApi.setShuffle(shuffle)
+          .setResultCallback { start() }
+          .setErrorCallback { start() }
+      }
     }
 
     /** Capa de um item, salva em arquivo ("file://…"). */
@@ -181,6 +197,8 @@ class SpotifyModule : Module() {
     OnDestroy {
       playerSub?.cancel()
       playerSub = null
+      contextSub?.cancel()
+      contextSub = null
       remote?.let { SpotifyAppRemote.disconnect(it) }
       remote = null
       io.shutdown()
@@ -196,11 +214,20 @@ class SpotifyModule : Module() {
       .setEventCallback { s -> onPlayerState(s) }
     // Se a conexão cair (Spotify fechado, por exemplo), avisamos o JavaScript.
     playerSub?.setErrorCallback { stopPlayer(remote?.isConnected == true) }
+    contextSub?.cancel()
+    contextSub = r.playerApi.subscribeToPlayerContext()
+      .setEventCallback { ctx ->
+        playerContext = ctx
+        emitPlayer()
+      }
   }
 
   private fun stopPlayer(connected: Boolean) {
     playerSub?.cancel()
     playerSub = null
+    contextSub?.cancel()
+    contextSub = null
+    playerContext = null
     state = null
     trackUri = null
     liked = null
@@ -257,6 +284,8 @@ class SpotifyModule : Module() {
       "canLike" to canLike,
       "artworkUri" to cover?.first,
       "artworkColor" to cover?.second,
+      "contextTitle" to playerContext?.title?.takeIf { it.isNotBlank() },
+      "contextUri" to playerContext?.uri?.takeIf { it.isNotBlank() },
     )
   }
 

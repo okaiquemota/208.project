@@ -1,4 +1,9 @@
-import { parseSpotifyPage, spotifyErrorMessage } from '../src/lib/spotify';
+import {
+  detailLayout,
+  HIGHLIGHTS_TAB,
+  isFolder,
+  splitRoot,
+  splitSection, parseSpotifyPage, spotifyErrorMessage } from '../src/lib/spotify';
 
 describe('spotify: listas', () => {
   it('lê os itens e descarta os sem id', () => {
@@ -35,5 +40,35 @@ describe('spotify: erros em português', () => {
   it('erro desconhecido tem mensagem genérica', () => {
     expect(spotifyErrorMessage('Qualquer')).toMatch(/Tente de novo/);
     expect(spotifyErrorMessage(undefined)).toMatch(/Tente de novo/);
+  });
+});
+
+describe('organização da escolha', () => {
+  const item = (id: string, playable: boolean, hasChildren: boolean) => ({
+    id, uri: `spotify:${id}`, title: id, subtitle: '', playable, hasChildren, image: null,
+  });
+  const secao = item('recentes', false, true);
+  const playlist = item('pl', true, true);
+  const musica = item('mus', true, false);
+
+  it('pasta é o que só abre', () => {
+    expect(isFolder(secao)).toBe(true);
+    expect(isFolder(playlist)).toBe(false);
+    expect(isFolder(musica)).toBe(false);
+  });
+
+  it('raiz: seções viram abas, o resto fica solto', () => {
+    expect(splitRoot([secao, playlist, musica])).toEqual({ tabs: [secao], loose: [playlist, musica] });
+    expect(HIGHLIGHTS_TAB).toBe('__destaques');
+  });
+
+  it('aba: capas soltas e fileiras', () => {
+    expect(splitSection([playlist, secao, musica])).toEqual({ tiles: [playlist, musica], shelves: [secao] });
+  });
+
+  it('dentro de uma playlist: faixas; dentro de uma pasta de playlists: capas', () => {
+    expect(detailLayout([musica, musica, playlist])).toBe('faixas');
+    expect(detailLayout([playlist, playlist, musica])).toBe('capas');
+    expect(detailLayout([])).toBe('faixas');
   });
 });

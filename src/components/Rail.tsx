@@ -4,8 +4,9 @@
 //   um contador (ex.: conversas novas do WhatsApp).
 
 import { Image } from 'expo-image';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { colors, font, sizes, tabular } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
@@ -14,6 +15,7 @@ import { formatClock, formatDateShort } from '../lib/datetime';
 import { formatBattery, formatKmh } from '../lib/format';
 import { useAccent, useSettings } from '../state/settings';
 import { BatteryIcon, BoltIcon, GridIcon, HomeIcon, MusicIcon } from './icons';
+import { SPRING_SOFT } from './motion';
 import { Touch } from './Touch';
 
 export type Page = 'inicio' | 'musica' | 'apps' | 'ajustes' | 'mensagens';
@@ -35,12 +37,26 @@ type Props = {
 };
 
 const BUTTON = 56;
+const NAV_GAP = 6;
 
 export function Rail({ now, battery, dock, onOpenApp, badges, activeApp, page, onNavigate, speedKmh, compact }: Props) {
   const accent = useAccent();
   const { speedAlertKmh } = useSettings().settings;
   const batteryColor = battery.alert ? colors.orange : colors.text;
   const speedAlert = speedKmh != null && speedAlertKmh > 0 && speedKmh > speedAlertKmh;
+
+  // Destaque da página atual: desliza de um botão para o outro com mola.
+  const activeIndex = page === 'inicio' ? 0 : page === 'musica' ? 1 : page === 'apps' || page === 'ajustes' ? 2 : -1;
+  const y = useSharedValue(Math.max(0, activeIndex) * (BUTTON + NAV_GAP));
+  const shown = useSharedValue(activeIndex >= 0 ? 1 : 0);
+  useEffect(() => {
+    if (activeIndex >= 0) y.value = withSpring(activeIndex * (BUTTON + NAV_GAP), SPRING_SOFT);
+    shown.value = withTiming(activeIndex >= 0 ? 1 : 0, { duration: 180 });
+  }, [activeIndex, y, shown]);
+  const highlight = useAnimatedStyle(() => ({
+    transform: [{ translateY: y.value }, { scale: 0.85 + shown.value * 0.15 }],
+    opacity: shown.value,
+  }));
 
   const nav: { page: Page; label: string; icon: (color: string) => ReactNode }[] = [
     { page: 'inicio', label: 'Início', icon: (c) => <HomeIcon size={28} color={c} /> },
@@ -87,19 +103,19 @@ export function Rail({ now, battery, dock, onOpenApp, badges, activeApp, page, o
       </View>
 
       <View style={styles.buttons}>
-        {nav.map((item) => {
-          const active = page === item.page || (item.page === 'apps' && page === 'ajustes');
-          return (
+        <View style={styles.nav}>
+          <Animated.View style={[styles.highlight, { backgroundColor: accent.main }, highlight]} pointerEvents="none" />
+          {nav.map((item) => (
             <Touch
               key={item.page}
               onPress={() => onNavigate(item.page)}
               accessibilityLabel={item.label}
-              style={[styles.navButton, active && { backgroundColor: accent.main }]}
+              style={styles.navButton}
             >
               {item.icon(colors.text)}
             </Touch>
-          );
-        })}
+          ))}
+        </View>
         {!compact &&
           dock.slice(0, 2).map((app) => (
             <Touch
@@ -146,6 +162,17 @@ const styles = StyleSheet.create({
   buttons: {
     alignItems: 'center',
     gap: 6,
+  },
+  nav: {
+    gap: NAV_GAP,
+  },
+  highlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: BUTTON,
+    height: BUTTON,
+    borderRadius: 18,
   },
   navButton: {
     width: BUTTON,

@@ -1,4 +1,5 @@
 // Configurações do app (o que aparece na tela de início, cor, alerta…).
+// O player de música não tem ajuste: é sempre automático (mostra o que toca).
 //
 // Ficam salvas no celular como JSON. Tudo aqui é puro: valores padrão,
 // validação (um ajuste salvo errado nunca derruba o app) e as operações de
@@ -60,8 +61,6 @@ export type Settings = {
   background: BackgroundId;
   /** Acima disso o velocímetro fica laranja/vermelho. 0 = sem alerta. */
   speedAlertKmh: number;
-  /** Pacote do player preferido (ex.: "com.spotify.music"), ou null = automático. */
-  preferredPlayer: string | null;
   /** Cores do mapa do Waze. */
   mapTheme: MapThemeId;
 };
@@ -71,7 +70,6 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: 'azul',
   background: 'papel',
   speedAlertKmh: 120,
-  preferredPlayer: null,
   mapTheme: 'escuro',
 };
 
@@ -103,8 +101,6 @@ export const COMPACT_WIDGETS: readonly SideWidgetId[] = ['volume'];
 const isOneOf = <T extends string>(list: readonly T[], v: unknown): v is T =>
   typeof v === 'string' && (list as readonly string[]).includes(v);
 
-const PACKAGE_RE = /^[A-Za-z][\w]*(\.[A-Za-z_][\w]*)+$/;
-
 /** Lê o JSON salvo e devolve configurações válidas (o que estiver errado volta ao padrão). */
 export function parseSettings(raw: string | null | undefined): Settings {
   let data: unknown = null;
@@ -126,12 +122,10 @@ export function parseSettings(raw: string | null | undefined): Settings {
     typeof d.speedAlertKmh === 'number' && (SPEED_ALERT_OPTIONS as readonly number[]).includes(d.speedAlertKmh)
       ? d.speedAlertKmh
       : DEFAULT_SETTINGS.speedAlertKmh;
-  const preferred =
-    typeof d.preferredPlayer === 'string' && PACKAGE_RE.test(d.preferredPlayer) ? d.preferredPlayer : null;
 
   const mapTheme = isOneOf(MAP_THEMES, d.mapTheme) ? d.mapTheme : DEFAULT_SETTINGS.mapTheme;
 
-  return { home: { main, side }, accent, background, speedAlertKmh: speed, preferredPlayer: preferred, mapTheme };
+  return { home: { main, side }, accent, background, speedAlertKmh: speed, mapTheme };
 }
 
 const cloneDefaults = (): Settings => ({

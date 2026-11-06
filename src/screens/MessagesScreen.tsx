@@ -8,9 +8,11 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Avatar } from '../components/CarNotificationWidgets';
 import { BackIcon, ChatIcon, CheckIcon } from '../components/icons';
+import { enterItem, enterText } from '../components/motion';
 import { Touch } from '../components/Touch';
 import { colors, font, sizes, tabular } from '../config/theme';
 import type { CarNotificationsState } from '../hooks/useCarNotifications';
@@ -71,30 +73,31 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
         WHATSAPP
       </Text>
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {chats.map((c) => {
+        {chats.map((c, i) => {
           const active = selected?.key === c.key;
           return (
-            <Touch
-              key={c.key}
-              onPress={() => setSelectedKey(c.key)}
-              accessibilityLabel={`Conversa com ${c.name}`}
-              style={[styles.row, active && styles.rowActive]}
-            >
-              <Avatar uri={c.avatarUri} name={c.name} size={44} />
-              <View style={styles.flex1}>
-                <View style={styles.titleRow}>
-                  <Text style={[font(15, '700'), styles.flex1]} numberOfLines={1} allowFontScaling={false}>
-                    {c.name}
-                  </Text>
-                  <Text style={[font(11, '600', colors.text3), tabular]} allowFontScaling={false}>
-                    {formatChatTime(c.postedAt, now)}
+            <Animated.View key={c.key} entering={enterItem(i)}>
+              <Touch
+                onPress={() => setSelectedKey(c.key)}
+                accessibilityLabel={`Conversa com ${c.name}`}
+                style={[styles.row, active && styles.rowActive]}
+              >
+                <Avatar uri={c.avatarUri} name={c.name} size={44} />
+                <View style={styles.flex1}>
+                  <View style={styles.titleRow}>
+                    <Text style={[font(15, '700'), styles.flex1]} numberOfLines={1} allowFontScaling={false}>
+                      {c.name}
+                    </Text>
+                    <Text style={[font(11, '600', colors.text3), tabular]} allowFontScaling={false}>
+                      {formatChatTime(c.postedAt, now)}
+                    </Text>
+                  </View>
+                  <Text style={font(13, '500', colors.text2)} numberOfLines={1} allowFontScaling={false}>
+                    {sent[c.key] ? `Você: ${sent[c.key]}` : c.lastText}
                   </Text>
                 </View>
-                <Text style={font(13, '500', colors.text2)} numberOfLines={1} allowFontScaling={false}>
-                  {sent[c.key] ? `Você: ${sent[c.key]}` : c.lastText}
-                </Text>
-              </View>
-            </Touch>
+              </Touch>
+            </Animated.View>
           );
         })}
       </ScrollView>
@@ -134,7 +137,7 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
 
       <ScrollView style={styles.flex1} contentContainerStyle={styles.bubbles} showsVerticalScrollIndicator={false}>
         {selected.messages.slice(-4).map((m, i) => (
-          <View key={`${m.time}-${i}`} style={styles.bubble}>
+          <Animated.View key={`${selected.key}-${m.time}-${i}`} entering={enterItem(i)} style={styles.bubble}>
             {m.sender ? (
               <Text style={font(12, '700', colors.green)} numberOfLines={1} allowFontScaling={false}>
                 {m.sender}
@@ -143,15 +146,15 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
             <Text style={font(16, '500')} numberOfLines={4} allowFontScaling={false}>
               {m.text}
             </Text>
-          </View>
+          </Animated.View>
         ))}
         {sent[selected.key] ? (
-          <View style={[styles.bubble, styles.bubbleMine]}>
+          <Animated.View key={`enviado-${sent[selected.key]}`} entering={enterText} style={[styles.bubble, styles.bubbleMine]}>
             <Text style={font(16, '500')} allowFontScaling={false}>
               {sent[selected.key]}
             </Text>
             <Text style={[font(11, '700', 'rgba(255,255,255,0.7)'), styles.sentLabel]}>Enviado ✓</Text>
-          </View>
+          </Animated.View>
         ) : null}
         {failed === selected.key ? (
           <Text style={font(13, '700', colors.orange)}>Não deu para responder daqui. Toque em Abrir.</Text>

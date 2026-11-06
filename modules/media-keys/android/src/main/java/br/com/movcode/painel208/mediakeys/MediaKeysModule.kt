@@ -119,6 +119,35 @@ class MediaKeysModule : Module() {
     Function("openUrlAdjacent") { url: String, packageName: String? -> openUrlAdjacent(url, packageName) }
     Function("isInMultiWindow") { appContext.currentActivity?.isInMultiWindowMode ?: false }
 
+    /** O serviço "Waze + música" (acessibilidade) está ligado? */
+    Function("isSplitServiceEnabled") { SplitScreenService.instance != null }
+
+    /** Abre a tela de Acessibilidade do Android (para ligar o serviço). */
+    Function("openAccessibilitySettings") {
+      val ctx = context ?: return@Function false
+      try {
+        ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        true
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    /**
+     * Abre um app (ex.: Waze) e o painel lado a lado, com o app à esquerda.
+     * Devolve "ao-lado" (já estava dividida: só abriu na outra metade),
+     * "dividindo" (montando a tela dividida) ou "sem-servico" (serviço desligado).
+     */
+    Function("openSplitWith") { packageName: String ->
+      val inSplit = appContext.currentActivity?.isInMultiWindowMode ?: false
+      when {
+        inSplit -> if (openAdjacent(packageName)) "ao-lado" else "erro"
+        SplitScreenService.instance?.splitWith(packageName) == true -> "dividindo"
+        SplitScreenService.instance == null -> "sem-servico"
+        else -> "erro"
+      }
+    }
+
     OnStartObserving(NOW_PLAYING_EVENT) {
       observing = true
       NowPlayingListenerService.onConnected = { mainHandler.post { startWatching(); emitNowPlaying() } }

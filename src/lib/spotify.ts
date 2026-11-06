@@ -74,3 +74,35 @@ export function spotifyErrorMessage(code: string | undefined | null): string {
       return 'Não deu para falar com o Spotify agora. Tente de novo.';
   }
 }
+
+// ---------- Organização da tela de escolha ----------
+// O Spotify entrega uma árvore: a raiz tem seções (ex.: "Tocadas
+// recentemente", "Sua Biblioteca") e cada seção tem fileiras ou playlists.
+
+/** Pasta: só abre (não toca). Ex.: uma seção ou fileira. */
+export const isFolder = (i: SpotifyItem) => i.hasChildren && !i.playable;
+
+/** Id da aba extra com o que vier tocável direto na raiz. */
+export const HIGHLIGHTS_TAB = '__destaques';
+
+/** Raiz → abas (pastas) e itens soltos (que viram a aba "Destaques"). */
+export function splitRoot(items: SpotifyItem[]): { tabs: SpotifyItem[]; loose: SpotifyItem[] } {
+  const tabs = items.filter(isFolder);
+  const loose = items.filter((i) => !isFolder(i));
+  return { tabs, loose };
+}
+
+/** Conteúdo de uma aba → capas soltas (grade) e fileiras (pastas com título). */
+export function splitSection(items: SpotifyItem[]): { tiles: SpotifyItem[]; shelves: SpotifyItem[] } {
+  return { tiles: items.filter((i) => !isFolder(i)), shelves: items.filter(isFolder) };
+}
+
+/**
+ * Como mostrar o que tem dentro de um item: "faixas" (lista de músicas, como
+ * numa playlist) ou "capas" (grade, quando a maioria é playlist/álbum/pasta).
+ */
+export function detailLayout(items: SpotifyItem[]): 'faixas' | 'capas' {
+  if (items.length === 0) return 'faixas';
+  const withChildren = items.filter((i) => i.hasChildren).length;
+  return withChildren * 2 > items.length ? 'capas' : 'faixas';
+}

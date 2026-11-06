@@ -17,7 +17,8 @@ declare class SpotifyRemoteNativeModule extends NativeModule<SpotifyRemoteEvents
   /** Dados crus; valide com parseSpotifyPage. */
   getRecommended(type: string): Promise<unknown>;
   getChildren(id: string, offset: number): Promise<unknown>;
-  play(id: string): Promise<boolean>;
+  /** shuffle: true = aleatório, false = em ordem, null = como está. */
+  play(id: string, shuffle: boolean | null): Promise<boolean>;
   getImage(raw: string): Promise<string | null>;
   /** O que está tocando agora (dados crus; valide com parseSpotifyPlayer). */
   getPlayerState(): unknown;

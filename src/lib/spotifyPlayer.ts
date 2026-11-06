@@ -30,6 +30,9 @@ export type SpotifyPlayerState = {
   /** Capa grande em arquivo ("file://…"). */
   artworkUri: string | null;
   artworkColor: string | null;
+  /** De onde está tocando ("Músicas Curtidas", "Daily Mix 1"…), se souber. */
+  contextTitle: string | null;
+  contextUri: string | null;
 };
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -72,6 +75,8 @@ export function parseSpotifyPlayer(raw: unknown): SpotifyPlayerState | null {
     canLike: bool(r.canLike, true),
     artworkUri: strOrNull(r.artworkUri),
     artworkColor: strOrNull(r.artworkColor),
+    contextTitle: strOrNull(r.contextTitle),
+    contextUri: strOrNull(r.contextUri),
   };
 }
 
@@ -123,6 +128,7 @@ export function spotifyToNowPlaying(s: SpotifyPlayerState): NowPlayingInfo {
     artworkColor: s.artworkColor,
     artworkRemoteUri: null,
     customActions: spotifyActions(s),
+    context: s.contextTitle,
   };
 }
 

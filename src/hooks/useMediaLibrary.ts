@@ -1,8 +1,7 @@
-// Todos os apps de música do celular (não só o Spotify): os instalados, o que
-// cada um está tocando e qual o painel deve acompanhar.
-//
-// Os apps são achados sozinhos pelo serviço de mídia (como no Android Auto),
-// sem precisar configurar nada. O player escolhido fica salvo nos Ajustes.
+// Todos os apps de música do celular (não só o Spotify): os instalados e o que
+// cada um está tocando. Os apps são achados sozinhos pelo serviço de mídia
+// (como no Android Auto). O player é sempre automático: o painel mostra o
+// que estiver tocando.
 
 import * as IntentLauncher from 'expo-intent-launcher';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -15,7 +14,6 @@ import {
   parseMediaApps,
   parseSessions,
 } from '../lib/nowPlaying';
-import { useSettings } from '../state/settings';
 import { useAppActive } from './useAppActive';
 import { loadIcon } from './useInstalledApps';
 
@@ -43,20 +41,9 @@ const readSessions = () => {
 };
 
 export function useMediaLibrary() {
-  const { settings, update } = useSettings();
-  const preferred = settings.preferredPlayer;
   const [apps, setApps] = useState<MediaApp[]>(readApps);
   const [sessions, setSessions] = useState<MediaSession[]>(readSessions);
   const [icons, setIcons] = useState<Record<string, string | null>>({});
-
-  // O módulo nativo precisa saber qual player acompanhar.
-  useEffect(() => {
-    try {
-      MediaKeys?.setPreferredPlayer(preferred);
-    } catch {
-      // Build antigo sem essa função: segue no automático.
-    }
-  }, [preferred]);
 
   // Sessões mudam o tempo todo (abriu outro player, pausou…).
   useEffect(() => {
@@ -94,12 +81,6 @@ export function useMediaLibrary() {
     [merged, icons],
   );
 
-  /** Escolhe o player que o painel acompanha (null = automático). */
-  const select = useCallback(
-    (pkg: string | null) => update((s) => (s.preferredPlayer === pkg ? s : { ...s, preferredPlayer: pkg })),
-    [update],
-  );
-
   /** Abre o app de música (ao lado, se o painel estiver em tela dividida). */
   const open = useCallback((pkg: string) => {
     try {
@@ -117,7 +98,7 @@ export function useMediaLibrary() {
   /** Ícone de um app qualquer (se já carregado). */
   const iconOf = useCallback((pkg: string | null | undefined) => (pkg ? (icons[pkg] ?? null) : null), [icons]);
 
-  return { entries, preferred, select, open, iconOf };
+  return { entries, open, iconOf };
 }
 
 export type MediaLibrary = ReturnType<typeof useMediaLibrary>;

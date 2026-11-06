@@ -9,10 +9,10 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 | Tela | O que tem |
 | --- | --- |
 | **Início** | Tela modular: um card principal (player, **mapa ao vivo do Waze** ou velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
-| **Música** | Player grande + duas abas: **Spotify** (suas playlists, curtidas e mixes, tocando sem sair do painel) e **Apps de música** (todos os apps de música do celular, achados sozinhos: YT Music, Deezer, Amazon Music, rádio, podcasts…, com o que cada um está tocando e a escolha de qual o painel acompanha). |
+| **Música** | O player em coluna e, ao lado, a **escolha de música no Spotify** no estilo do Spotify no CarPlay: abas das seções do Spotify, fileiras de capas grandes e a playlist aberta com **Tocar**, **Aleatório** e a lista de músicas. O que está tocando aparece em verde com barrinhas animadas. |
 | **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
 | **Mensagens** | Conversas novas do WhatsApp: lista à esquerda, conversa aberta à direita, com respostas rápidas de um toque. Abre pelo ícone do WhatsApp na barra lateral (com o número de conversas novas) ou pelo widget. |
-| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, cores do mapa, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
+| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, cores do mapa, alerta de velocidade e permissões. Tudo fica salvo no celular. |
 
 ```
 ┌──────┬──────────────────────────────────┬──────────────┐
@@ -26,7 +26,7 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 └──────┴──────────────────────────────────┴──────────────┘
 ```
 
-Em **tela dividida com o Waze** (largura menor que 700 dp), fica só a barra lateral (com a velocidade) e o card principal.
+Em **tela dividida com o Waze** (largura menor que 700 dp), o painel vira o lado direito do CarPlay: barra lateral com a velocidade, **próxima curva** em cima (quando há rota) e a **música** embaixo. Veja "Waze + música lado a lado".
 
 ### Widgets da tela de início
 
@@ -51,7 +51,8 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 
 ### Player de música
 
-- Funciona com **qualquer app de música**, não só o Spotify. O painel acompanha o que estiver tocando; nos Ajustes ou na tela Música dá para fixar um player.
+- Funciona com **qualquer app de música**, não só o Spotify, e é **sempre automático**: o painel mostra o que estiver tocando. Quando nada toca, ele oferece o Spotify.
+- Mostra **de onde está tocando** ("Tocando de Músicas Curtidas", "Tocando de Daily Mix 1") quando o Spotify está conectado.
 - No estilo do Spotify: capa desfocada no fundo, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio app (no Spotify: curtir e aleatório/repetir).
 - Capa, título e progresso precisam do **Acesso a notificações** (veja abaixo). Sem ele, os botões continuam funcionando.
 - **Com o Spotify conectado** (veja abaixo), o player fala direto com o Spotify: capa em alta (720 px), **coração aceso** nas músicas curtidas (tocar curte/descurte), **aleatório** e **repetir** com o estado certo (verdes quando ligados). Funciona mesmo sem o Acesso a notificações. Se outro app estiver tocando, o player mostra esse outro app.
@@ -121,14 +122,25 @@ O Client ID fica em `src/config/spotify.ts`. O **Client secret** não é usado e
 
 Se der erro, a mensagem diz o que falta (Spotify não instalado, não logado, cadastro do SHA-1/e-mail no site, versão antiga do Spotify).
 
-### Waze de um lado, música do outro
+### Waze + música lado a lado
 
-1. Abra o **Waze**.
-2. Abra os **Recentes** (botão ▢ ou o gesto de deslizar e segurar).
-3. Toque no **ícone do Painel 208**, em cima do cartão dele, e escolha **Abrir na exibição em tela dividida**. Depois toque no Waze para ele ocupar a outra metade.
-4. Arraste a divisória para dar mais espaço ao Waze, se quiser.
+Como no painel do CarPlay: o **Waze de verdade** (rota, voz, alertas) numa metade e o painel na outra, com a próxima curva e a música. O Android não deixa colocar o app do Waze *dentro* de outro app, mas a tela dividida faz exatamente isso.
 
-Com o painel já em tela dividida, tocar no Waze (ou no Maps) da barra lateral abre o app na outra metade.
+**Com um toque (recomendado).** Ligue uma vez o serviço do painel em Acessibilidade:
+
+1. **Apps → Ajustes → Permissões → "Waze + música (tela dividida)" → Ativar**. Abre a tela de Acessibilidade do Android.
+2. Toque em **Aplicativos instalados** → **Painel 208: Waze + música** → ligue e confirme.
+3. Se a chave estiver cinza ("configuração restrita"), libere como no Acesso a notificações: **Configurações → Aplicativos → Painel 208 → ⋮ → Permitir configurações restritas**.
+
+Depois disso, tocar no **Waze na barra lateral** (ou no botão do Waze no mapa) abre o Waze à esquerda e o painel à direita. O serviço só usa o comando "dividir tela" do Android: não lê o conteúdo da tela nem o que você digita.
+
+**Sem o serviço: par de apps da Samsung.** O One UI cria um atalho que abre dois apps lado a lado:
+
+1. Abra o **Painel Edge** (a aba na borda da tela) → ⚙ → ative **Apps**.
+2. No painel Apps, toque em **Criar par de apps**, escolha **Waze** e depois **Painel 208**, e salve.
+3. Um toque nesse par abre os dois lado a lado.
+
+**Na mão.** Abra o Waze → **Recentes** → toque no ícone do Painel 208 em cima do cartão → **Abrir na exibição em tela dividida** → toque no Waze para a outra metade. Arraste a divisória se quiser mais espaço para o Waze.
 
 ## Rodar no M51 pelo cabo USB ou Wi-Fi
 
@@ -296,13 +308,15 @@ __tests__/                testes (Jest)
 1. **Acha todos os apps de música.** Procura os apps que oferecem o serviço de mídia (`MediaBrowserService`), do mesmo jeito que o Android Auto. Por isso a lista aparece sozinha, sem configurar nada. Para o Android 11+ deixar o app enxergar esses apps, o plugin declara essa busca em `<queries>`.
 2. **Lê o que está tocando.** Com o "Acesso a notificações" liberado, o Android deixa ler a *sessão de mídia* de qualquer player: título, artista, capa, duração e posição. A capa vira um arquivo JPEG e a cor média dela tinge o card. Quando a música troca ou pausa, o Kotlin avisa o JavaScript na hora.
 3. **Controla o player.** Com acesso, manda tocar, pausar e pular direto para o player. Sem acesso, "aperta" as teclas de mídia, as mesmas de um fone Bluetooth. O volume muda sem o popup do sistema.
-4. **Abre apps ao lado.** Pede ao Android para abrir o app na outra metade da tela quando o painel está em tela dividida.
+4. **Abre apps ao lado.** Pede ao Android para abrir o app na outra metade da tela quando o painel está em tela dividida. Com o serviço de acessibilidade ligado (`SplitScreenService.kt`), monta a tela dividida sozinho: abre o Waze, pede ao Android "dividir tela" e abre o painel na outra metade.
 5. **Spotify por dentro** (`SpotifyModule.kt`). Usa o SDK "App Remote" do Spotify, que fala direto com o app do Spotify do celular (o painel não guarda senha nem token). Ele entrega as listas "para carro" em forma de árvore: cada item pode ser aberto (tem filhos) ou tocado. O Kotlin guarda os itens e o JavaScript só passa o id; as capas viram arquivos JPEG no cache. O SDK não está no Maven Central, por isso o `.aar` fica dentro do módulo e o plugin `withLocalMaven` aponta o Gradle para essa pasta.
 6. **Próxima curva e WhatsApp** (`CarNotificationsModule.kt`). O mesmo serviço do "Acesso a notificações" recebe as notificações; o painel guarda na memória só as de navegação (Waze, Maps…) e as conversas do WhatsApp. A seta da manobra e a foto do contato viram PNG. Para responder, o painel aperta o botão "Responder" da própria notificação com o texto escolhido (é o mesmo recurso que relógios e o Android Auto usam).
 
 O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolve `null` e o resto do app continua funcionando.
 
 **Config plugin (`plugins/withCarLauncher.js`).** A pasta `android/` é gerada automaticamente e nunca é editada à mão. O plugin ajusta o AndroidManifest a cada geração. A partir do Android 11, um app só enxerga outros apps que declara em `<queries>`; sem isso, o painel nem saberia se o Waze está instalado.
+
+**Movimento.** As animações usam o Reanimated, que roda na thread de interface (fica liso mesmo com o JavaScript ocupado): botões afundam e voltam com mola, o destaque da barra lateral desliza, telas e capas entram em sequência, a barra de progresso anda lisa, a música nova entra deslizando e o coração pulsa ao curtir. Tudo curto (até ~350 ms) para não distrair dirigindo.
 
 **Tela.** Segue o CarPlay/Android Auto: barra lateral preta, cards grandes bem arredondados e a fonte **Inter**, embutida pelo plugin `expo-font`. O fundo é preto porque, em AMOLED, pixel preto fica apagado. Os números usam `tabular-nums` (todos os dígitos com a mesma largura), então "88" → "91" não faz o texto pular. Os botões têm no mínimo 64 dp de área de toque e não há popups, porque é para usar dirigindo. Abaixo de 700 dp de largura (tela dividida), o layout compacto entra sozinho.
 
@@ -318,6 +332,5 @@ O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolv
 
 ## Próximos passos (estrutura já pronta)
 
-- **Waze e música lado a lado com um toque**: um serviço de acessibilidade pode ligar a tela dividida sozinho. Precisa de mais uma liberação nas Configurações.
 - **Uber/99 para motoristas**: atalho para o Uber Driver (`com.ubercab.driver`) e um card com a última notificação do app (chamada nova, mensagem). Aceitar corrida ou ver ganhos continua só no app deles.
 - **OBD2 (ELM327 Bluetooth)**: RPM, temperatura etc., como um card novo com o seu hook (`useObd`).

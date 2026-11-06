@@ -4,8 +4,10 @@
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { colors, font, sizes } from '../config/theme';
+import { enterItem } from './motion';
 import { Touch } from './Touch';
 
 export type GridTile = {
@@ -42,19 +44,21 @@ export function AppGrid({ tiles, columns, emptyText }: Props) {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {rows.map((row, r) => (
           <View key={r} style={styles.row}>
-            {row.map((tile) => (
-              <Touch key={tile.key} onPress={tile.onPress} accessibilityLabel={`Abrir ${tile.label}`} style={styles.item}>
-                <View style={styles.iconBox}>
-                  {typeof tile.icon === 'string' ? (
-                    <Image source={tile.icon} style={styles.icon} contentFit="contain" transition={0} />
-                  ) : (
-                    tile.icon
-                  )}
-                </View>
-                <Text style={font(14, '600')} numberOfLines={1} allowFontScaling={false}>
-                  {tile.label}
-                </Text>
-              </Touch>
+            {row.map((tile, c) => (
+              <Animated.View key={tile.key} entering={enterItem(r * columns + c)}>
+                <Touch onPress={tile.onPress} accessibilityLabel={`Abrir ${tile.label}`} style={styles.item}>
+                  <View style={styles.iconBox}>
+                    {typeof tile.icon === 'string' ? (
+                      <Image source={tile.icon} style={styles.icon} contentFit="contain" transition={0} />
+                    ) : (
+                      tile.icon
+                    )}
+                  </View>
+                  <Text style={font(14, '600')} numberOfLines={1} allowFontScaling={false}>
+                    {tile.label}
+                  </Text>
+                </Touch>
+              </Animated.View>
             ))}
           </View>
         ))}

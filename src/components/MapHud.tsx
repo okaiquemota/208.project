@@ -8,6 +8,7 @@
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInLeft } from 'react-native-reanimated';
 
 import { colors, font, tabular } from '../config/theme';
 import { formatKmh } from '../lib/format';
@@ -47,21 +48,23 @@ export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, com
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Próxima manobra */}
       {nav && (
-        <Touch
-          onPress={() => onOpenNav(nav.key)}
-          accessibilityLabel={`${nav.instruction}, em ${nav.distance}. Abrir ${nav.appName}`}
-          style={[styles.panel, styles.turn, compact && styles.turnCompact]}
-        >
-          <View style={styles.turnTop}>
-            <ManeuverArrow nav={nav} size={compact ? 40 : 52} />
-            <Text style={[font(compact ? 26 : 34, '800'), tabular]} numberOfLines={1} allowFontScaling={false}>
-              {nav.distance}
+        <Animated.View key={nav.instruction} entering={FadeInLeft.duration(260)} style={styles.turnWrap}>
+          <Touch
+            onPress={() => onOpenNav(nav.key)}
+            accessibilityLabel={`${nav.instruction}, em ${nav.distance}. Abrir ${nav.appName}`}
+            style={[styles.panel, styles.turn, compact && styles.turnCompact]}
+          >
+            <View style={styles.turnTop}>
+              <ManeuverArrow nav={nav} size={compact ? 40 : 52} />
+              <Text style={[font(compact ? 26 : 34, '800'), tabular]} numberOfLines={1} allowFontScaling={false}>
+                {nav.distance}
+              </Text>
+            </View>
+            <Text style={font(compact ? 14 : 17, '600')} numberOfLines={2} allowFontScaling={false}>
+              {nav.street}
             </Text>
-          </View>
-          <Text style={font(compact ? 14 : 17, '600')} numberOfLines={2} allowFontScaling={false}>
-            {nav.street}
-          </Text>
-        </Touch>
+          </Touch>
+        </Animated.View>
       )}
 
       {/* Velocidade e botão do Waze */}
@@ -150,10 +153,12 @@ const styles = StyleSheet.create({
     backgroundColor: PANEL,
     borderRadius: 14,
   },
-  turn: {
+  turnWrap: {
     position: 'absolute',
     top: 10,
     left: 10,
+  },
+  turn: {
     maxWidth: 300,
     minWidth: 200,
     paddingHorizontal: 16,

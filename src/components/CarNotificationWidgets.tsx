@@ -4,6 +4,7 @@
 
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 import { colors, font, sizes, tabular } from '../config/theme';
 import { type Chat, formatChatTime, initials } from '../lib/messages';
@@ -19,6 +20,7 @@ import {
   TurnRightIcon,
   UTurnIcon,
 } from './icons';
+import { enterText } from './motion';
 import { Touch } from './Touch';
 
 const GLYPH: Record<Maneuver, typeof StraightIcon> = {
@@ -77,17 +79,17 @@ export function NextTurnWidget({
   }
   return (
     <Touch onPress={() => onOpen(nav.key)} accessibilityLabel={`Abrir ${nav.appName}`} style={[styles.card, styles.row]}>
-      <View style={[styles.arrowBox, { backgroundColor: accent.main }]}>
+      <Animated.View key={nav.instruction} entering={ZoomIn.springify().damping(15)} style={[styles.arrowBox, { backgroundColor: accent.main }]}>
         <ManeuverArrow nav={nav} size={44} />
-      </View>
-      <View style={styles.flex1}>
+      </Animated.View>
+      <Animated.View key={`${nav.instruction}|t`} entering={enterText} style={styles.flex1}>
         <Text style={[font(28, '800'), tabular]} numberOfLines={1} adjustsFontSizeToFit allowFontScaling={false}>
           {nav.distance}
         </Text>
         <Text style={font(13, '600', colors.text2)} numberOfLines={2} allowFontScaling={false}>
           {nav.instruction}
         </Text>
-      </View>
+      </Animated.View>
     </Touch>
   );
 }

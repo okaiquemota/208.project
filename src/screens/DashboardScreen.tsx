@@ -7,15 +7,18 @@
 
 import { useMemo, useState } from 'react';
 import { Linking, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { type EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import MediaKeys from '../../modules/media-keys';
 import { AppGrid, type GridTile } from '../components/AppGrid';
 import { GearIcon } from '../components/icons';
+import { enterPage } from '../components/motion';
 import type { WazeActions } from '../components/MapHud';
 import { type Page, Rail } from '../components/Rail';
 import { Wallpaper } from '../components/Wallpaper';
 import { CAR_APPS } from '../config/apps';
+import { SPOTIFY_PACKAGE } from '../config/spotify';
 import { colors, COMPACT_BELOW_DP, sizes } from '../config/theme';
 import { type BatteryInfo, useBattery } from '../hooks/useBattery';
 import { type CarNotificationsState, useCarNotifications } from '../hooks/useCarNotifications';
@@ -26,6 +29,7 @@ import { type InstalledApp, useInstalledApps } from '../hooks/useInstalledApps';
 import { type MediaState, useMedia } from '../hooks/useMedia';
 import { type MediaLibrary, useMediaLibrary } from '../hooks/useMediaLibrary';
 import { usePlayer } from '../hooks/usePlayer';
+import { type SplitScreenState, useSplitScreen } from '../hooks/useSplitScreen';
 import { type SpotifyState, useSpotify } from '../hooks/useSpotify';
 import { BURN_IN_MAX_SHIFT, type Offset } from '../lib/burnIn';
 import { pickDockApps } from '../lib/carApps';
@@ -49,6 +53,8 @@ export function DashboardScreen() {
   const spotify = useSpotify();
   // Próxima curva (Waze/Maps) e WhatsApp, pelas notificações.
   const notifications = useCarNotifications();
+  // Waze + painel lado a lado com um toque.
+  const split = useSplitScreen();
   const shortcuts = useInstalledApps(CAR_APPS);
   const shift = useBurnInShift();
   // Furo da câmera (Infinity-O) e afins: o conteúdo não fica embaixo dele.
@@ -63,6 +69,7 @@ export function DashboardScreen() {
       library={library}
       spotify={spotify}
       notifications={notifications}
+      split={split}
       shortcuts={shortcuts}
       shift={shift}
       insets={insets}
@@ -78,6 +85,7 @@ export type DashboardViewProps = {
   library: MediaLibrary;
   spotify: SpotifyState;
   notifications: CarNotificationsState;
+  split: SplitScreenState;
   shortcuts: { apps: InstalledApp[]; loading: boolean; open: (pkg: string) => void };
   shift: Offset;
   insets: EdgeInsets;
@@ -94,6 +102,7 @@ export function DashboardView({
   library,
   spotify,
   notifications,
+  split,
   shortcuts,
   shift,
   insets,
@@ -111,10 +120,10 @@ export function DashboardView({
   const dock = useMemo(() => pickDockApps(apps).filter((a) => a.tipo !== 'musica'), [apps]);
   const shortcutApps = useMemo(() => apps.filter((a) => !dock.includes(a)), [apps, dock]);
 
-  // Player: o que está tocando; se nada, o preferido; senão o primeiro app de música.
+  // Player (sempre automático): o que está tocando; se nada, o Spotify; senão o primeiro app de música.
   const playingPkg = player.nowPlaying?.packageName ?? null;
   const defaultPlayer =
-    library.entries.find((e) => e.packageName === library.preferred) ?? library.entries[0] ?? null;
+    library.entries.find((e) => e.packageName === SPOTIFY_PACKAGE) ?? library.entries[0] ?? null;
   const playerPkg = playingPkg ?? defaultPlayer?.packageName ?? null;
   const playerIcon =
     library.iconOf(playerPkg) ?? apps.find((a) => a.package === playerPkg)?.icon ?? null;
@@ -125,15 +134,20 @@ export function DashboardView({
   // WhatsApp e Waze: os de verdade, instalados no celular.
   const whatsapp = apps.find((a) => CHAT_PACKAGES.includes(a.package)) ?? null;
   const waze = apps.find((a) => a.package === WAZE_PACKAGE) ?? null;
-  // No dock, o WhatsApp abre as mensagens dentro do painel (como no CarPlay).
+  // Apps de navegação (Waze, Maps): abrem lado a lado com o painel, como no CarPlay.
+  const openNav = (pkg: string) => {
+    if (!split.openSplit(pkg)) open(pkg);
+  };
+  // No dock: WhatsApp abre as mensagens dentro do painel; navegação abre lado a lado.
   const openDockApp = (pkg: string) => {
     if (notifications.available && CHAT_PACKAGES.includes(pkg)) setPage('mensagens');
+    else if (dock.find((a) => a.package === pkg)?.tipo === 'navegacao') openNav(pkg);
     else open(pkg);
   };
   const badges = whatsapp ? { [whatsapp.package]: notifications.chats.length } : undefined;
   const wazeActions: WazeActions | null = waze
     ? {
-        open: () => open(waze.package),
+        open: () => openNav(waze.package),
         navigateTo: (favorite) => {
           const url = wazeFavoriteUrl(favorite);
           let opened = false;
@@ -193,7 +207,7 @@ export function DashboardView({
       content = <AppGrid tiles={tiles} columns={compact ? 3 : 5} />;
       break;
     case 'ajustes':
-      content = <SettingsScreen gps={gps} media={media} library={library} onDone={() => setPage('inicio')} />;
+      content = <SettingsScreen gps={gps} media={media} split={split} onDone={() => setPage('inicio')} />;
       break;
     case 'mensagens':
       content = (
@@ -257,7 +271,10 @@ export function DashboardView({
           speedKmh={gps.status === 'ok' ? gps.trip.speedKmh : null}
           compact={compact}
         />
-        {content}
+        {/* Tela nova entra com um fade suave */}
+        <Animated.View key={page} entering={enterPage} style={styles.page}>
+          {content}
+        </Animated.View>
       </View>
     </View>
   );
@@ -267,6 +284,11 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  page: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: sizes.gap,
   },
   frame: {
     flex: 1,

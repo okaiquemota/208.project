@@ -5,6 +5,7 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { type LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 import { colors, font, sizes, tabular } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
@@ -37,6 +38,7 @@ import {
   PlayIcon,
   WeatherGlyph,
 } from './icons';
+import { enterText, exitFast } from './motion';
 import { Touch } from './Touch';
 
 /** Tamanho do espaço disponível (para os desenhos se ajustarem ao card). */
@@ -272,22 +274,25 @@ export function MiniPlayerWidget({
               <MusicIcon size={26} color={colors.text2} />
             )}
           </View>
-          <View style={styles.flex1}>
+          <Animated.View key={np?.title ?? 'nada'} entering={enterText} exiting={exitFast} style={styles.flex1}>
             <Text style={font(15, '700')} numberOfLines={2} allowFontScaling={false}>
               {np?.title || 'Nada tocando'}
             </Text>
             <Text style={font(12, '500', colors.text2)} numberOfLines={1} allowFontScaling={false}>
               {np?.artist || np?.appName || 'Toque para escolher'}
             </Text>
-          </View>
+          </Animated.View>
         </Touch>
         <Touch
           onPress={media.playPause}
           disabled={!media.available}
           accessibilityLabel={media.playing ? 'Pausar' : 'Tocar'}
+          pressScale={0.88}
           style={styles.miniPlay}
         >
-          {media.playing ? <PauseIcon size={22} color="#000" /> : <PlayIcon size={24} color="#000" />}
+          <Animated.View key={media.playing ? 'pause' : 'play'} entering={ZoomIn.springify().damping(14)}>
+            {media.playing ? <PauseIcon size={22} color="#000" /> : <PlayIcon size={24} color="#000" />}
+          </Animated.View>
         </Touch>
         <Touch
           onPress={media.next}
