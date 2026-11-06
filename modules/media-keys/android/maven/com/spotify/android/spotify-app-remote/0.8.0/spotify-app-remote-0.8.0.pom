@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spotify Android SDK (App Remote) 0.8.0, baixado de
+     https://github.com/spotify/android-sdk/releases (licença Apache 2.0).
+     Fica num repositório Maven local porque não é publicado no Maven Central. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.spotify.android</groupId>
+  <artifactId>spotify-app-remote</artifactId>
+  <version>0.8.0</version>
+  <packaging>aar</packaging>
+</project>

@@ -18,6 +18,8 @@ export const PlayIcon = make('M7.5 4.9v14.2a1 1 0 0 0 1.53.85l11.2-7.1a1 1 0 0 0
 export const PauseIcon = make('M6 4.5h4.2v15H6zM13.8 4.5H18v15h-4.2z');
 export const NextIcon = make('M4.5 5.8v12.4a.9.9 0 0 0 1.4.75l8.7-6.2a.9.9 0 0 0 0-1.5L5.9 5.05a.9.9 0 0 0-1.4.75zM16.5 5h3v14h-3z');
 export const PreviousIcon = make('M19.5 5.8v12.4a.9.9 0 0 1-1.4.75l-8.7-6.2a.9.9 0 0 1 0-1.5l8.7-6.2a.9.9 0 0 1 1.4.75zM4.5 5h3v14h-3z');
+/** Seta de voltar (navegação em listas). */
+export const BackIcon = make('M15.7 4.3a1 1 0 0 1 0 1.4L9.41 12l6.3 6.3a1 1 0 1 1-1.42 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.42 0z');
 export const MinusIcon = make('M5 10.75h14v2.5H5z');
 export const PlusIcon = make('M10.75 5h2.5v5.75H19v2.5h-5.75V19h-2.5v-5.75H5v-2.5h5.75z');
 export const BoltIcon = make('M13.5 2 4 14h6.5L9.5 22 20 9.5h-6.5z');

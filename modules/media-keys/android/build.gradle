@@ -16,3 +16,12 @@ android {
     abortOnError false
   }
 }
+
+// Spotify App Remote (navegar e tocar playlists do Spotify).
+// O .aar não está no Maven Central: fica no repositório local ./maven,
+// registrado para todos os projetos pelo plugin ./plugins/withLocalMaven (app.json).
+dependencies {
+  implementation "com.spotify.android:spotify-app-remote:0.8.0@aar"
+  // O App Remote usa Gson para conversar com o app do Spotify.
+  implementation "com.google.code.gson:gson:2.11.0"
+}

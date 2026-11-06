@@ -22,6 +22,7 @@ import { type GpsState, useGps } from '../hooks/useGps';
 import { type InstalledApp, useInstalledApps } from '../hooks/useInstalledApps';
 import { type MediaState, useMedia } from '../hooks/useMedia';
 import { type MediaLibrary, useMediaLibrary } from '../hooks/useMediaLibrary';
+import { type SpotifyState, useSpotify } from '../hooks/useSpotify';
 import { BURN_IN_MAX_SHIFT, type Offset } from '../lib/burnIn';
 import { pickDockApps } from '../lib/carApps';
 import { useAccent, useSettings } from '../state/settings';
@@ -35,6 +36,8 @@ export function DashboardScreen() {
   const now = useClock();
   const media = useMedia();
   const library = useMediaLibrary();
+  // Spotify por dentro: reconecta sozinho na abertura se já foi autorizado.
+  const spotify = useSpotify();
   const shortcuts = useInstalledApps(CAR_APPS);
   const shift = useBurnInShift();
   // Furo da câmera (Infinity-O) e afins: o conteúdo não fica embaixo dele.
@@ -47,6 +50,7 @@ export function DashboardScreen() {
       now={now}
       media={media}
       library={library}
+      spotify={spotify}
       shortcuts={shortcuts}
       shift={shift}
       insets={insets}
@@ -60,6 +64,7 @@ export type DashboardViewProps = {
   now: Date;
   media: MediaState;
   library: MediaLibrary;
+  spotify: SpotifyState;
   shortcuts: { apps: InstalledApp[]; loading: boolean; open: (pkg: string) => void };
   shift: Offset;
   insets: EdgeInsets;
@@ -74,6 +79,7 @@ export function DashboardView({
   now,
   media,
   library,
+  spotify,
   shortcuts,
   shift,
   insets,
@@ -133,6 +139,7 @@ export function DashboardView({
         <MusicScreen
           media={media}
           library={library}
+          spotify={spotify}
           playerIcon={playerIcon}
           defaultPlayerName={defaultPlayer?.label ?? null}
           onOpenPlayer={openPlayer}

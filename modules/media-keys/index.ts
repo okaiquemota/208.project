@@ -3,3 +3,6 @@
 export { default } from './src/MediaKeysModule';
 export type { MediaKeysNativeModule } from './src/MediaKeysModule';
 export * from './src/MediaKeys.types';
+
+// Spotify por dentro (playlists, tocados recentemente…). Também pode ser null.
+export { default as SpotifyRemote } from './src/SpotifyRemoteModule';

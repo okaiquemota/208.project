@@ -1,6 +1,9 @@
 {
   "platforms": ["android"],
   "android": {
-    "modules": ["br.com.movcode.painel208.mediakeys.MediaKeysModule"]
+    "modules": [
+      "br.com.movcode.painel208.mediakeys.MediaKeysModule",
+      "br.com.movcode.painel208.mediakeys.SpotifyModule"
+    ]
   }
 }

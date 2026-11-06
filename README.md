@@ -9,7 +9,7 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 | Tela | O que tem |
 | --- | --- |
 | **Início** | Tela modular: um card principal (player **ou** velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
-| **Música** | Player grande + a lista de **todos os apps de música do celular**, achados sozinhos (Spotify, YT Music, Deezer, Amazon Music, rádio, podcasts…). Mostra o que cada um está tocando e deixa escolher qual o painel acompanha. |
+| **Música** | Player grande + duas abas: **Spotify** (suas playlists, curtidas e mixes, tocando sem sair do painel) e **Apps de música** (todos os apps de música do celular, achados sozinhos: YT Music, Deezer, Amazon Music, rádio, podcasts…, com o que cada um está tocando e a escolha de qual o painel acompanha). |
 | **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
 | **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
 
@@ -51,6 +51,7 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 - Funciona com **qualquer app de música**, não só o Spotify. O painel acompanha o que estiver tocando; nos Ajustes ou na tela Música dá para fixar um player.
 - No estilo do Spotify: capa desfocada no fundo, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio app (no Spotify: curtir e aleatório/repetir).
 - Capa, título e progresso precisam do **Acesso a notificações** (veja abaixo). Sem ele, os botões continuam funcionando.
+- **Spotify por dentro**: na tela Música, aba **Spotify**, aparecem as mesmas listas que o Spotify mostra em carros (tocadas recentemente, curtidas, Daily Mix, playlists). Toque numa lista para abrir, numa música para tocar, ou em **Tocar** para tocar a lista inteira. Precisa de **Spotify Premium** e de ligar o Spotify uma vez (veja abaixo).
 
 ### Outros recursos
 
@@ -73,6 +74,25 @@ Se a chave estiver **cinza** com o aviso "configuração restrita" (acontece no 
 1. Vá em **Configurações → Aplicativos → Painel 208**.
 2. Toque nos **⋮** (canto superior direito) → **Permitir configurações restritas**.
 3. Repita os passos acima.
+
+### Ligar o Spotify (uma vez só)
+
+O painel usa o SDK oficial do Spotify ("App Remote"). Ele conversa com o app do Spotify instalado no celular, então o Spotify precisa estar instalado e logado numa conta **Premium**.
+
+**1. No site do Spotify** ([developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) → seu app → **Settings → Edit**):
+
+- **Redirect URIs**: `painel208://spotify-callback`
+- **Android packages**: pacote `br.com.movcode.painel208` e o SHA-1 do certificado que assina o APK:
+  - APK gerado no computador (`npx expo run:android` ou os APKs enviados no chat): `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`
+  - APK do EAS: outro certificado. Veja o SHA-1 com `npx eas-cli@latest credentials` e cadastre também (dá para ter os dois).
+- **APIs used**: marque **Android**.
+- **User Management**: adicione o e-mail da sua conta do Spotify. Em modo de desenvolvimento, só quem está nessa lista consegue usar (até 5 pessoas).
+
+O Client ID fica em `src/config/spotify.ts`. O **Client secret** não é usado e **nunca** deve ir para o código.
+
+**2. No painel:** tela **Música** → aba **Spotify** → **Conectar ao Spotify**. Na primeira vez o próprio Spotify pergunta se você autoriza; aceite. Depois disso o painel reconecta sozinho sempre que abrir.
+
+Se der erro, a mensagem diz o que falta (Spotify não instalado, não logado, cadastro do SHA-1/e-mail no site, versão antiga do Spotify).
 
 ### Waze de um lado, música do outro
 
@@ -207,7 +227,9 @@ App.tsx                   raiz: barras escondidas, tela ligada, ajustes salvos
 plugins/
   withCarLauncher.js      config plugin: <queries>, apps de música, tela inicial e paisagem
   carLauncherManifest.js  funções que mexem no AndroidManifest (testadas)
-modules/media-keys/       módulo Expo local em Kotlin: música de qualquer app, volume, tela dividida
+  withLocalMaven.js       config plugin: repositório Maven local (onde fica o SDK do Spotify)
+modules/media-keys/       módulo Expo local em Kotlin: música de qualquer app, volume, tela dividida, Spotify
+  android/maven/          SDK "App Remote" do Spotify (.aar oficial, licença Apache 2.0)
 src/
   config/                 tema (cores, fonte) e leitura da lista de atalhos
   lib/                    funções puras, sem React, todas com teste
@@ -231,17 +253,19 @@ __tests__/                testes (Jest)
 - **`nowPlaying.ts`**: confere os dados do player, calcula onde a música está agora (a barra anda sozinha entre uma leitura e outra) e tira a cor de fundo da capa, escurecida para o texto branco continuar legível.
 - **`carApps.ts`**: valida a lista de atalhos e escolhe os apps fixos da barra lateral.
 - **`settings.ts`**: os ajustes (widgets da tela de início, cor, alerta, player). Valida o que está salvo: um ajuste corrompido volta ao padrão em vez de derrubar o app. Escolher um widget que já está em outra posição troca os dois de lugar.
+- **`spotify.ts`**: confere as listas que vêm do Spotify e traduz os erros dele para mensagens em português que dizem o que fazer.
 - **`weather.ts`**: monta o pedido ao Open-Meteo e traduz o código do tempo para texto e ícone em português.
 - **`widgets.ts`**: barrinhas do sinal do GPS, LEDs do velocímetro e degraus do volume.
 - **`battery.ts`**: além do "carregando/descarregando" do Android, guarda o maior nível visto desde que plugou. Se cair 2 pontos ainda na tomada, avisa "USB fraca".
 - **`geo.ts`, `burnIn.ts`, `datetime.ts`, `format.ts`, `gauge.ts`**: distância e rumo, deslocamento anti burn-in, data em português, números no padrão brasileiro e geometria do anel.
 
-**Módulo Kotlin (`modules/media-keys`).** Faz três coisas que o JavaScript sozinho não consegue:
+**Módulo Kotlin (`modules/media-keys`).** Faz o que o JavaScript sozinho não consegue:
 
 1. **Acha todos os apps de música.** Procura os apps que oferecem o serviço de mídia (`MediaBrowserService`), do mesmo jeito que o Android Auto. Por isso a lista aparece sozinha, sem configurar nada. Para o Android 11+ deixar o app enxergar esses apps, o plugin declara essa busca em `<queries>`.
 2. **Lê o que está tocando.** Com o "Acesso a notificações" liberado, o Android deixa ler a *sessão de mídia* de qualquer player: título, artista, capa, duração e posição. A capa vira um arquivo JPEG e a cor média dela tinge o card. Quando a música troca ou pausa, o Kotlin avisa o JavaScript na hora.
 3. **Controla o player.** Com acesso, manda tocar, pausar e pular direto para o player. Sem acesso, "aperta" as teclas de mídia, as mesmas de um fone Bluetooth. O volume muda sem o popup do sistema.
 4. **Abre apps ao lado.** Pede ao Android para abrir o app na outra metade da tela quando o painel está em tela dividida.
+5. **Spotify por dentro** (`SpotifyModule.kt`). Usa o SDK "App Remote" do Spotify, que fala direto com o app do Spotify do celular (o painel não guarda senha nem token). Ele entrega as listas "para carro" em forma de árvore: cada item pode ser aberto (tem filhos) ou tocado. O Kotlin guarda os itens e o JavaScript só passa o id; as capas viram arquivos JPEG no cache. O SDK não está no Maven Central, por isso o `.aar` fica dentro do módulo e o plugin `withLocalMaven` aponta o Gradle para essa pasta.
 
 O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolve `null` e o resto do app continua funcionando.
 
@@ -261,7 +285,6 @@ O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolv
 
 ## Próximos passos (estrutura já pronta)
 
-- **Playlists do Spotify dentro do painel** (Curtidas, playlists, recomendações), com o SDK oficial "App Remote" do Spotify. Precisa cadastrar o app em developer.spotify.com (pacote `br.com.movcode.painel208`, redirect `painel208://spotify-callback` e o SHA-1 do certificado que assina o APK) para ter um Client ID.
 - **Waze e música lado a lado com um toque**: um serviço de acessibilidade pode ligar a tela dividida sozinho. Precisa de mais uma liberação nas Configurações.
 - **Próxima curva do Waze/Maps no painel**: o mesmo "Acesso a notificações" permite ler a notificação de navegação e mostrar a próxima manobra num card.
 - **Uber/99 para motoristas**: atalho para o Uber Driver (`com.ubercab.driver`) e um card com a última notificação do app (chamada nova, mensagem). Aceitar corrida ou ver ganhos continua só no app deles.
