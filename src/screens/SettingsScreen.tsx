@@ -112,6 +112,21 @@ export function SettingsScreen({ gps, media, library, onDone }: Props) {
           </View>
         </Section>
 
+        <Section title="Fundo da tela">
+          <Chips>
+            <Chip
+              label="Papel de parede"
+              selected={settings.background === 'papel'}
+              onPress={() => update((s) => ({ ...s, background: 'papel' }))}
+            />
+            <Chip
+              label="Preto (economiza tela AMOLED)"
+              selected={settings.background === 'preto'}
+              onPress={() => update((s) => ({ ...s, background: 'preto' }))}
+            />
+          </Chips>
+        </Section>
+
         <Section title="Alerta de velocidade">
           <Label>A velocidade fica vermelha acima de:</Label>
           <Chips>
@@ -240,6 +255,8 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: sizes.cardRadius,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     overflow: 'hidden',
   },
   header: {

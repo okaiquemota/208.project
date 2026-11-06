@@ -36,6 +36,10 @@ export const ACCENTS = {
 } as const;
 export type AccentId = keyof typeof ACCENTS;
 
+/** Fundo da tela: papel de parede estilo CarPlay ou preto puro (AMOLED). */
+export const BACKGROUNDS = ['papel', 'preto'] as const;
+export type BackgroundId = (typeof BACKGROUNDS)[number];
+
 /** Opções do alerta de velocidade (km/h). 0 = desligado. */
 export const SPEED_ALERT_OPTIONS = [0, 80, 100, 110, 120, 130, 140] as const;
 
@@ -46,6 +50,8 @@ export type Settings = {
     side: (SideWidgetId | null)[];
   };
   accent: AccentId;
+  /** Fundo atrás dos cards. */
+  background: BackgroundId;
   /** Acima disso o velocímetro fica laranja/vermelho. 0 = sem alerta. */
   speedAlertKmh: number;
   /** Pacote do player preferido (ex.: "com.spotify.music"), ou null = automático. */
@@ -55,6 +61,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   home: { main: 'player', side: ['velocidade', 'viagem', 'volume'] },
   accent: 'azul',
+  background: 'papel',
   speedAlertKmh: 120,
   preferredPlayer: null,
 };
@@ -102,6 +109,7 @@ export function parseSettings(raw: string | null | undefined): Settings {
   const side = normalizeSide(Array.isArray(home.side) ? home.side : DEFAULT_SETTINGS.home.side, main);
 
   const accent = isOneOf(Object.keys(ACCENTS) as AccentId[], d.accent) ? d.accent : DEFAULT_SETTINGS.accent;
+  const background = isOneOf(BACKGROUNDS, d.background) ? d.background : DEFAULT_SETTINGS.background;
   const speed =
     typeof d.speedAlertKmh === 'number' && (SPEED_ALERT_OPTIONS as readonly number[]).includes(d.speedAlertKmh)
       ? d.speedAlertKmh
@@ -109,7 +117,7 @@ export function parseSettings(raw: string | null | undefined): Settings {
   const preferred =
     typeof d.preferredPlayer === 'string' && PACKAGE_RE.test(d.preferredPlayer) ? d.preferredPlayer : null;
 
-  return { home: { main, side }, accent, speedAlertKmh: speed, preferredPlayer: preferred };
+  return { home: { main, side }, accent, background, speedAlertKmh: speed, preferredPlayer: preferred };
 }
 
 const cloneDefaults = (): Settings => ({

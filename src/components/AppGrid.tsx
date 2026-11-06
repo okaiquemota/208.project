@@ -1,4 +1,4 @@
-// Grade de ícones grandes, como a tela inicial do CarPlay. Cada item é um app
+// Grade de ícones grandes, como a tela inicial do CarPlay (direto sobre o papel de parede). Cada item é um app
 // (ícone real) ou um atalho interno (ex.: Ajustes, com ícone desenhado).
 
 import { Image } from 'expo-image';
@@ -64,10 +64,10 @@ export function AppGrid({ tiles, columns, emptyText }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // Como no CarPlay: os ícones ficam direto sobre o papel de parede, sem card.
   card: {
     flex: 1,
     borderRadius: sizes.cardRadius,
-    backgroundColor: colors.card,
     overflow: 'hidden',
   },
   scroll: {

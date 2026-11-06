@@ -8,8 +8,10 @@ import type { TextStyle } from 'react-native';
 
 export const colors = {
   bg: '#000000',
-  /** Fundo dos cards: cinza neutro bem escuro, como os widgets do CarPlay. */
-  card: '#151515',
+  /** Fundo dos cards: "vidro" escuro e translúcido, como os widgets do CarPlay. */
+  card: 'rgba(26,27,31,0.74)',
+  /** Borda bem sutil dos cards (a "aresta" do vidro). */
+  cardBorder: 'rgba(255,255,255,0.08)',
   /** Elementos dentro dos cards (botões secundários, trilhos). */
   fill: 'rgba(255,255,255,0.10)',
   fillPressed: 'rgba(255,255,255,0.22)',

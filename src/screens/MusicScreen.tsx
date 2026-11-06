@@ -155,6 +155,8 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: sizes.cardRadius,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     paddingTop: 16,
     overflow: 'hidden',
   },

@@ -11,7 +11,7 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 | **Início** | Tela modular: um card principal (player **ou** velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
 | **Música** | Player grande + a lista de **todos os apps de música do celular**, achados sozinhos (Spotify, YT Music, Deezer, Amazon Music, rádio, podcasts…). Mostra o que cada um está tocando e deixa escolher qual o painel acompanha. |
 | **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
-| **Ajustes** | Montar a tela de início, cor de destaque, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
+| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
 
 ```
 ┌──────┬──────────────────────────────────┬──────────────┐
@@ -55,7 +55,8 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 ### Outros recursos
 
 - **Bateria**: fica laranja na barra lateral quando está na bateria ou com USB fraca.
-- **Tela**: paisagem pelos dois lados, tela cheia, sempre ligada, fundo preto (AMOLED) e deslocamento anti burn-in de 1–2 dp por minuto.
+- **Fundo**: papel de parede escuro com formas suaves na cor de destaque, como o do CarPlay, e cards de "vidro" escuro por cima. Nos Ajustes dá para trocar pelo preto puro, que economiza a tela AMOLED.
+- **Tela**: paisagem pelos dois lados, tela cheia, sempre ligada e deslocamento anti burn-in de 1–2 dp por minuto.
 
 ## Primeira vez no M51
 

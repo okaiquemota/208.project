@@ -12,6 +12,7 @@ import { type EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-conte
 import { AppGrid, type GridTile } from '../components/AppGrid';
 import { GearIcon } from '../components/icons';
 import { type Page, Rail } from '../components/Rail';
+import { Wallpaper } from '../components/Wallpaper';
 import { CAR_APPS } from '../config/apps';
 import { colors, COMPACT_BELOW_DP, sizes } from '../config/theme';
 import { type BatteryInfo, useBattery } from '../hooks/useBattery';
@@ -23,7 +24,7 @@ import { type MediaState, useMedia } from '../hooks/useMedia';
 import { type MediaLibrary, useMediaLibrary } from '../hooks/useMediaLibrary';
 import { BURN_IN_MAX_SHIFT, type Offset } from '../lib/burnIn';
 import { pickDockApps } from '../lib/carApps';
-import { useAccent } from '../state/settings';
+import { useAccent, useSettings } from '../state/settings';
 import { HomeScreen } from './HomeScreen';
 import { MusicScreen } from './MusicScreen';
 import { SettingsScreen } from './SettingsScreen';
@@ -82,6 +83,7 @@ export function DashboardView({
   const compact = width < COMPACT_BELOW_DP;
   const [page, setPage] = useState<Page>(initialPage);
   const accent = useAccent();
+  const { background } = useSettings().settings;
 
   const { apps, open } = shortcuts;
   const dock = useMemo(() => pickDockApps(apps).filter((a) => a.tipo !== 'musica'), [apps]);
@@ -164,6 +166,7 @@ export function DashboardView({
 
   return (
     <View style={styles.root}>
+      {background === 'papel' && <Wallpaper main={accent.main} soft={accent.soft} />}
       <View
         style={[
           styles.frame,

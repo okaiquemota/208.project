@@ -336,6 +336,8 @@ const styles = StyleSheet.create({
     minHeight: 0,
     borderRadius: sizes.cardRadius,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     padding: 14,
     overflow: 'hidden',
     justifyContent: 'space-between',

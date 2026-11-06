@@ -41,6 +41,12 @@ describe('configurações: leitura do que está salvo', () => {
     expect(s.preferredPlayer).toBeNull();
   });
 
+  it('fundo: papel de parede (padrão) ou preto; valor estranho volta ao padrão', () => {
+    expect(parseSettings(null).background).toBe('papel');
+    expect(parseSettings(JSON.stringify({ background: 'preto' })).background).toBe('preto');
+    expect(parseSettings(JSON.stringify({ background: 'neon' })).background).toBe('papel');
+  });
+
   it('alerta desligado (0) é válido', () => {
     expect(parseSettings(JSON.stringify({ speedAlertKmh: 0 })).speedAlertKmh).toBe(0);
   });
