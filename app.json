@@ -2,15 +2,17 @@
   "expo": {
     "name": "Painel 208",
     "slug": "painel-208",
-    "version": "2.5.1",
-    "platforms": ["android"],
+    "version": "2.6.0",
+    "platforms": [
+      "android"
+    ],
     "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#000000",
     "android": {
       "package": "br.com.movcode.painel208",
-      "versionCode": 12,
+      "versionCode": 13,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -30,7 +32,14 @@
     "plugins": [
       "expo-image",
       "expo-sqlite",
-      ["./plugins/withLocalMaven", { "paths": ["modules/media-keys/android/maven"] }],
+      [
+        "./plugins/withLocalMaven",
+        {
+          "paths": [
+            "modules/media-keys/android/maven"
+          ]
+        }
+      ],
       [
         "expo-font",
         {
@@ -39,12 +48,30 @@
               {
                 "fontFamily": "Inter",
                 "fontDefinitions": [
-                  { "path": "./node_modules/@expo-google-fonts/inter/300Light/Inter_300Light.ttf", "weight": 300 },
-                  { "path": "./node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf", "weight": 400 },
-                  { "path": "./node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf", "weight": 500 },
-                  { "path": "./node_modules/@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf", "weight": 600 },
-                  { "path": "./node_modules/@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf", "weight": 700 },
-                  { "path": "./node_modules/@expo-google-fonts/inter/800ExtraBold/Inter_800ExtraBold.ttf", "weight": 800 }
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/300Light/Inter_300Light.ttf",
+                    "weight": 300
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf",
+                    "weight": 400
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf",
+                    "weight": 500
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf",
+                    "weight": 600
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf",
+                    "weight": 700
+                  },
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/800ExtraBold/Inter_800ExtraBold.ttf",
+                    "weight": 800
+                  }
                 ]
               }
             ]
@@ -85,16 +112,45 @@
           "asHomeLauncher": false,
           "sensorLandscape": true,
           "apps": [
-            { "label": "Waze", "package": "com.waze", "tipo": "navegacao" },
-            { "label": "Maps", "package": "com.google.android.apps.maps", "tipo": "navegacao" },
-            { "label": "Spotify", "package": "com.spotify.music", "tipo": "musica" },
-            { "label": "YT Music", "package": "com.google.android.apps.youtube.music", "tipo": "musica" },
-            { "label": "Deezer", "package": "deezer.android.app", "tipo": "musica" },
-            { "label": "WhatsApp", "package": "com.whatsapp", "tipo": "comunicacao" },
-            { "label": "Telefone", "package": "com.samsung.android.dialer", "tipo": "comunicacao" }
+            {
+              "label": "Waze",
+              "package": "com.waze",
+              "tipo": "navegacao"
+            },
+            {
+              "label": "Maps",
+              "package": "com.google.android.apps.maps",
+              "tipo": "navegacao"
+            },
+            {
+              "label": "Spotify",
+              "package": "com.spotify.music",
+              "tipo": "musica"
+            },
+            {
+              "label": "YT Music",
+              "package": "com.google.android.apps.youtube.music",
+              "tipo": "musica"
+            },
+            {
+              "label": "Deezer",
+              "package": "deezer.android.app",
+              "tipo": "musica"
+            },
+            {
+              "label": "WhatsApp",
+              "package": "com.whatsapp",
+              "tipo": "comunicacao"
+            },
+            {
+              "label": "Telefone",
+              "package": "com.samsung.android.dialer",
+              "tipo": "comunicacao"
+            }
           ]
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ]
   }
 }

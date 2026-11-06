@@ -13,9 +13,9 @@ import Animated, { FadeInLeft } from 'react-native-reanimated';
 import { colors, font, tabular } from '../config/theme';
 import { formatKmh } from '../lib/format';
 import { formatEta, type NavInfo, parseTripSummary } from '../lib/navigation';
-import type { WazeFavorite } from '../lib/wazeMap';
+import type { WazeFavorite } from '../lib/waze';
 import { ManeuverArrow } from './CarNotificationWidgets';
-import { HomeIcon, WorkIcon } from './icons';
+import { HomeIcon, MinusIcon, PlusIcon, WorkIcon } from './icons';
 import { Touch } from './Touch';
 
 /** Botões que levam ao Waze de verdade. */
@@ -36,11 +36,18 @@ export type MapHudProps = {
   waze: WazeActions | null;
   now: number;
   compact: boolean;
+  /** Botões do mapa: zoom e 3D/2D (só no mapa nativo). */
+  controls?: {
+    mode: '3d' | '2d';
+    onToggleMode: () => void;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+  };
 };
 
 const PANEL = 'rgba(0,0,0,0.88)';
 
-export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, compact }: MapHudProps) {
+export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, compact, controls }: MapHudProps) {
   const summary = nav ? parseTripSummary(nav.detail, now) : null;
   const alert = speedKmh != null && speedAlertKmh > 0 && speedKmh > speedAlertKmh;
 
@@ -90,6 +97,26 @@ export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, com
           </Touch>
         )}
       </View>
+
+      {/* Zoom e 3D/2D, embaixo à direita (botões grandes, sem gestos no mapa) */}
+      {controls && (
+        <View style={styles.controls} pointerEvents="box-none">
+          <Touch onPress={controls.onToggleMode} accessibilityLabel={controls.mode === '3d' ? 'Ver em 2D' : 'Ver em 3D'} style={[styles.panel, styles.control]}>
+            <Text allowFontScaling={false} style={font(15, '800')}>
+              {controls.mode === '3d' ? '2D' : '3D'}
+            </Text>
+          </Touch>
+          <View style={[styles.panel, styles.zoom]}>
+            <Touch onPress={controls.onZoomIn} accessibilityLabel="Aproximar" style={styles.control}>
+              <PlusIcon size={22} color={colors.text} />
+            </Touch>
+            <View style={styles.zoomDivider} />
+            <Touch onPress={controls.onZoomOut} accessibilityLabel="Afastar" style={styles.control}>
+              <MinusIcon size={22} color={colors.text} />
+            </Touch>
+          </View>
+        </View>
+      )}
 
       {/* Embaixo: resumo da viagem, ou Casa/Trabalho */}
       {summary ? (
@@ -209,6 +236,28 @@ const styles = StyleSheet.create({
   wazeIcon: {
     width: 56,
     height: 56,
+  },
+  controls: {
+    position: 'absolute',
+    right: 10,
+    bottom: 30,
+    alignItems: 'center',
+    gap: 8,
+  },
+  control: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+  },
+  zoom: {
+    alignItems: 'center',
+  },
+  zoomDivider: {
+    width: 30,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   summary: {
     position: 'absolute',

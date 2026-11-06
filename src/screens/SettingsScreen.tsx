@@ -129,7 +129,7 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
           </Chips>
         </Section>
 
-        <Section title="Mapa do Waze">
+        <Section title="Mapa 3D">
           <Chips>
             <Chip
               label="Escuro (noturno)"
@@ -137,13 +137,13 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
               onPress={() => update((s) => ({ ...s, mapTheme: 'escuro' }))}
             />
             <Chip
-              label="Claro (original)"
+              label="Claro (de dia)"
               selected={settings.mapTheme === 'claro'}
               onPress={() => update((s) => ({ ...s, mapTheme: 'claro' }))}
             />
           </Chips>
           <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
-            Escolha “Mapa ao vivo (Waze)” no card principal. O mapa usa a internet do celular.
+            Escolha “Mapa 3D” no card principal. O mapa usa a internet do celular. Rota, trânsito e voz: toque no Waze para abrir o Waze ao lado.
           </Text>
         </Section>
 

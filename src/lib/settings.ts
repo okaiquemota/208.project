@@ -43,7 +43,7 @@ export type AccentId = keyof typeof ACCENTS;
 export const BACKGROUNDS = ['papel', 'preto'] as const;
 export type BackgroundId = (typeof BACKGROUNDS)[number];
 
-/** Cores do mapa do Waze: escuro (noturno, como o CarPlay) ou claro (o original). */
+/** Cores do mapa 3D: escuro (noturno, como o CarPlay) ou claro (de dia). */
 export const MAP_THEMES = ['escuro', 'claro'] as const;
 export type MapThemeId = (typeof MAP_THEMES)[number];
 
@@ -61,7 +61,7 @@ export type Settings = {
   background: BackgroundId;
   /** Acima disso o velocímetro fica laranja/vermelho. 0 = sem alerta. */
   speedAlertKmh: number;
-  /** Cores do mapa do Waze. */
+  /** Cores do mapa 3D. */
   mapTheme: MapThemeId;
 };
 
@@ -91,7 +91,7 @@ export const WIDGET_INFO: Record<SideWidgetId, { nome: string; descricao: string
 
 export const MAIN_INFO: Record<MainWidgetId, { nome: string }> = {
   player: { nome: 'Player de música' },
-  mapa: { nome: 'Mapa ao vivo (Waze)' },
+  mapa: { nome: 'Mapa 3D' },
   velocidade: { nome: 'Velocidade grande' },
 };
 

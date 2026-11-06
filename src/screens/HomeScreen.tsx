@@ -18,7 +18,7 @@ import {
 import { enterItem } from '../components/motion';
 import { NowPlayingCard } from '../components/NowPlayingCard';
 import type { WazeActions } from '../components/MapHud';
-import { WazeMap } from '../components/WazeMap';
+import { CarMap } from '../components/CarMap';
 import { sizes } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
 import type { CarNotificationsState } from '../hooks/useCarNotifications';
@@ -61,7 +61,7 @@ export function HomeScreen(props: HomeProps) {
     main === 'velocidade' ? (
       <SpeedWidget gps={props.gps} large />
     ) : main === 'mapa' ? (
-      <WazeMap
+      <CarMap
         gps={props.gps}
         theme={settings.mapTheme}
         hud={{

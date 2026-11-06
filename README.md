@@ -8,7 +8,7 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 
 | Tela | O que tem |
 | --- | --- |
-| **Início** | Tela modular: um card principal (player, **mapa ao vivo do Waze** ou velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
+| **Início** | Tela modular: um card principal (player, **mapa 3D** ou velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
 | **Música** | O player em coluna e, ao lado, a **escolha de música no Spotify** no estilo do Spotify no CarPlay: abas das seções do Spotify, fileiras de capas grandes e a playlist aberta com **Tocar**, **Aleatório** e a lista de músicas. O que está tocando aparece em verde com barrinhas animadas. |
 | **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
 | **Mensagens** | Conversas novas do WhatsApp: lista à esquerda, conversa aberta à direita, com respostas rápidas de um toque. Abre pelo ícone do WhatsApp na barra lateral (com o número de conversas novas) ou pelo widget. |
@@ -58,20 +58,20 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 - **Com o Spotify conectado** (veja abaixo), o player fala direto com o Spotify: capa em alta (720 px), **coração aceso** nas músicas curtidas (tocar curte/descurte), **aleatório** e **repetir** com o estado certo (verdes quando ligados). Funciona mesmo sem o Acesso a notificações. Se outro app estiver tocando, o player mostra esse outro app.
 - **Spotify por dentro**: na tela Música, aba **Spotify**, aparecem as mesmas listas que o Spotify mostra em carros (tocadas recentemente, curtidas, Daily Mix, playlists). Toque numa lista para abrir, numa música para tocar, ou em **Tocar** para tocar a lista inteira. Precisa de **Spotify Premium** e de ligar o Spotify uma vez (veja abaixo).
 
-### Mapa ao vivo do Waze
+### Mapa 3D
 
-Escolha **Mapa ao vivo (Waze)** como card principal nos Ajustes. É o mapa oficial do Waze (o mesmo "iFrame" que o Waze oferece para sites), com trânsito e alertas da comunidade, e por cima as informações no estilo do Waze no CarPlay:
+Escolha **Mapa 3D** como card principal nos Ajustes. É um mapa nativo do próprio painel ([MapLibre](https://maplibre.org) com os mapas gratuitos do [OpenFreeMap](https://openfreemap.org), dados do OpenStreetMap; sem chave e sem cadastro), no estilo do Waze no CarPlay:
 
-- **mapa noturno** cinza com ruas claras (nos Ajustes dá para usar as cores originais);
-- **segue o carro** pelo GPS do painel (o ponto azul). Depois de arrastar ou dar zoom com o dedo, ele espera 20 s para voltar a seguir;
-- **próxima curva** (seta, distância e rua) e, embaixo, **chegada, minutos e km** que faltam, quando há uma rota no Waze ou no Maps;
+- **3D**: câmera inclinada, prédios em 3D (mais baixos e translúcidos, para não tapar as ruas) e o botão **2D/3D**;
+- **segue o carro e gira com ele**: a seta fica sempre no mesmo lugar, apontando para frente, e o mapa desliza por baixo a cada leitura do GPS. Parado, o mapa não gira;
+- **zoom pela velocidade**: de perto na cidade, mais aberto na estrada. Os botões **+/−** ajustam;
+- **visual noturno** cinza com ruas mais claras conforme a importância, nomes de ruas e bairros em português, sem ícones de lojas poluindo (nos Ajustes há a versão clara, de dia);
+- **próxima curva** (seta, distância e rua) e, embaixo, **chegada, minutos e km**, quando há rota no Waze ou no Maps;
 - **velocidade** num círculo (fica vermelha acima do alerta);
-- **Casa** e **Trabalho**: começam a rota no Waze na hora (usam os endereços salvos no próprio Waze);
-- **botão do Waze**: abre o app de verdade.
+- **Casa** e **Trabalho**: começam a rota no Waze na hora (endereços salvos no próprio Waze);
+- **botão do Waze**: abre o app de verdade ao lado.
 
-A linha azul da rota e a voz são do app do Waze. O Android não deixa colocar o app de outro dentro do painel (só o Android Auto e o CarPlay têm essa permissão). Para ver a rota, deixe o Waze numa metade da tela e o painel na outra (veja abaixo): com a tela já dividida, o botão do Waze, Casa e Trabalho abrem o Waze na outra metade.
-
-O mapa usa a internet do celular (dados móveis).
+O mapa não arrasta com o dedo (o carro fica sempre no lugar). Rota desenhada, trânsito ao vivo e voz são do app do Waze: para isso, Waze numa metade da tela e o painel na outra (veja abaixo). O mapa usa a internet do celular (dados móveis).
 
 ### Mensagens do WhatsApp
 
@@ -295,7 +295,8 @@ __tests__/                testes (Jest)
 - **`settings.ts`**: os ajustes (widgets da tela de início, cor, alerta, player). Valida o que está salvo: um ajuste corrompido volta ao padrão em vez de derrubar o app. Escolher um widget que já está em outra posição troca os dois de lugar.
 - **`spotify.ts`**: confere as listas que vêm do Spotify e traduz os erros dele para mensagens em português que dizem o que fazer.
 - **`spotifyPlayer.ts`**: o estado do player do Spotify (música, curtida, aleatório, repetir), os botões dele e a regra de quando o card usa o Spotify direto ou a sessão de mídia do Android.
-- **`wazeMap.ts`**: o endereço do mapa do Waze, o script que roda dentro da página dele (troca o GPS do navegador pelo GPS do painel, aplica o mapa noturno e avisa quando o mapa é tocado), a regra de quando recentralizar (andou mais de 120 m e ninguém mexeu no mapa há 20 s) e os links oficiais de rota para Casa/Trabalho. O mapa noturno é uma tabela que troca cada tom de cinza do mapa claro por outro: nomes escuros viram claros, o fundo bege vira cinza-escuro e as ruas brancas ficam um cinza mais claro que o fundo.
+- **`carMap.ts`**: o estilo do mapa 3D (cores do tema, largura de cada tipo de rua por zoom, prédios 3D, nomes em português) e as contas da câmera: zoom pela velocidade (17,3 parado → 15,5 a 120 km/h), direção (segue o GPS andando, fica parada abaixo de 5 km/h) e o espaço em cima que põe o carro a 70% da altura da tela.
+- **`waze.ts`**: os links oficiais do Waze que começam a rota para Casa ou Trabalho.
 - **`navigation.ts`**: entende a notificação do app de navegação. Cada app escreve de um jeito ("300 m" no título e a rua no texto, ou "Vire à direita em 300 m"), então ela procura a distância em qualquer campo e usa o resto como instrução. Sem distância (ex.: "Waze em execução"), não é curva. Também separa a rua e tira chegada/minutos/km da linha de resumo.
 - **`messages.ts`**: valida as conversas do WhatsApp, o horário curto ("agora", "5 min", "ontem") e as respostas rápidas.
 - **`weather.ts`**: monta o pedido ao Open-Meteo e traduz o código do tempo para texto e ícone em português.

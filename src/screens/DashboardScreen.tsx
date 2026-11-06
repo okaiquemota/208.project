@@ -33,7 +33,7 @@ import { type SplitScreenState, useSplitScreen } from '../hooks/useSplitScreen';
 import { type SpotifyState, useSpotify } from '../hooks/useSpotify';
 import { BURN_IN_MAX_SHIFT, type Offset } from '../lib/burnIn';
 import { pickDockApps } from '../lib/carApps';
-import { wazeFavoriteUrl } from '../lib/wazeMap';
+import { wazeFavoriteUrl } from '../lib/waze';
 import { useAccent, useSettings } from '../state/settings';
 import { HomeScreen } from './HomeScreen';
 import { MessagesScreen } from './MessagesScreen';
