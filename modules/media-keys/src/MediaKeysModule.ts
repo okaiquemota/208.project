@@ -22,6 +22,11 @@ declare class MediaKeysNativeModule extends NativeModule<MediaKeysEvents> {
   /** Dados crus do Kotlin; valide com parseNowPlaying antes de usar. */
   getNowPlaying(): Record<string, unknown> | null;
 
+  // Qualquer app de música (dados crus; valide com parseMediaApps/parseSessions).
+  getMediaApps(): unknown[];
+  getSessions(): unknown[];
+  setPreferredPlayer(packageName: string | null): boolean;
+
   // Tela dividida.
   openAdjacent(packageName: string): boolean;
   isInMultiWindow(): boolean;

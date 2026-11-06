@@ -1,36 +1,47 @@
-// Barra lateral preta, como no CarPlay/Android Auto: bateria, hora e data em cima,
-// três apps fixos no meio e o botão que alterna painel ↔ apps embaixo.
-// No modo compacto (tela dividida com o Waze), mostra também a velocidade.
+// Barra lateral preta, como no CarPlay/Android Auto:
+// - em cima: bateria, hora e data (e a velocidade, no modo compacto);
+// - no meio: navegação (Início, Música, Apps) e os apps fixos (dock).
 
 import { Image } from 'expo-image';
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, font, SPEED_ALERT_KMH, sizes, tabular } from '../config/theme';
+import { colors, font, sizes, tabular } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
 import type { InstalledApp } from '../hooks/useInstalledApps';
 import { formatClock, formatDateShort } from '../lib/datetime';
 import { formatBattery, formatKmh } from '../lib/format';
-import { BatteryIcon, BoltIcon, DashboardIcon, GridIcon } from './icons';
+import { useAccent, useSettings } from '../state/settings';
+import { BatteryIcon, BoltIcon, GridIcon, HomeIcon, MusicIcon } from './icons';
 import { Touch } from './Touch';
+
+export type Page = 'inicio' | 'musica' | 'apps' | 'ajustes';
 
 type Props = {
   now: Date;
   battery: BatteryInfo;
   dock: InstalledApp[];
   onOpenApp: (pkg: string) => void;
-  page: 'painel' | 'apps';
-  onTogglePage: () => void;
+  page: Page;
+  onNavigate: (page: Page) => void;
   /** Velocidade para mostrar no modo compacto (null = sem leitura). */
   speedKmh?: number | null;
   compact?: boolean;
 };
 
-const DOCK_ICON = 46;
-const DOCK_BUTTON = 60;
+const BUTTON = 56;
 
-export function Rail({ now, battery, dock, onOpenApp, page, onTogglePage, speedKmh, compact }: Props) {
+export function Rail({ now, battery, dock, onOpenApp, page, onNavigate, speedKmh, compact }: Props) {
+  const accent = useAccent();
+  const { speedAlertKmh } = useSettings().settings;
   const batteryColor = battery.alert ? colors.orange : colors.text;
-  const speedAlert = speedKmh != null && speedKmh > SPEED_ALERT_KMH;
+  const speedAlert = speedKmh != null && speedAlertKmh > 0 && speedKmh > speedAlertKmh;
+
+  const nav: { page: Page; label: string; icon: (color: string) => ReactNode }[] = [
+    { page: 'inicio', label: 'Início', icon: (c) => <HomeIcon size={28} color={c} /> },
+    { page: 'musica', label: 'Música', icon: (c) => <MusicIcon size={26} color={c} /> },
+    { page: 'apps', label: 'Apps e ajustes', icon: (c) => <GridIcon size={26} color={c} /> },
+  ];
 
   return (
     <View style={styles.rail}>
@@ -47,51 +58,55 @@ export function Rail({ now, battery, dock, onOpenApp, page, onTogglePage, speedK
             {battery.status === 'usb-fraca' ? 'USB FRACA' : 'NA BATERIA'}
           </Text>
         )}
-        <Text style={[font(23, '700'), tabular, styles.clock]} allowFontScaling={false}>
+        <Text style={[font(23, '700'), tabular]} allowFontScaling={false}>
           {formatClock(now)}
         </Text>
-        <Text style={font(11, '600', colors.text2)} numberOfLines={1} allowFontScaling={false}>
-          {formatDateShort(now)}
-        </Text>
+        {!battery.alert && (
+          <Text style={font(11, '600', colors.text2)} numberOfLines={1} allowFontScaling={false}>
+            {formatDateShort(now)}
+          </Text>
+        )}
         {compact && (
           <View style={styles.speed}>
             <Text
-              style={[font(34, '800', speedKmh == null ? colors.text3 : speedAlert ? colors.red : colors.text), tabular]}
+              style={[font(32, '800', speedKmh == null ? colors.text3 : speedAlert ? colors.red : colors.text), tabular]}
               allowFontScaling={false}
             >
               {speedKmh == null ? '--' : formatKmh(speedKmh)}
             </Text>
-            <Text style={font(11, '700', colors.text2)} allowFontScaling={false}>
+            <Text style={font(10, '700', colors.text2)} allowFontScaling={false}>
               KM/H
             </Text>
           </View>
         )}
       </View>
 
-      <View style={styles.dock}>
-        {dock.map((app) => (
-          <Touch
-            key={app.package}
-            onPress={() => onOpenApp(app.package)}
-            accessibilityLabel={`Abrir ${app.label}`}
-            style={styles.dockButton}
-          >
-            <Image source={app.icon} style={styles.dockIcon} contentFit="contain" transition={0} />
-          </Touch>
-        ))}
+      <View style={styles.buttons}>
+        {nav.map((item) => {
+          const active = page === item.page || (item.page === 'apps' && page === 'ajustes');
+          return (
+            <Touch
+              key={item.page}
+              onPress={() => onNavigate(item.page)}
+              accessibilityLabel={item.label}
+              style={[styles.navButton, active && { backgroundColor: accent.main }]}
+            >
+              {item.icon(colors.text)}
+            </Touch>
+          );
+        })}
+        {!compact &&
+          dock.slice(0, 2).map((app) => (
+            <Touch
+              key={app.package}
+              onPress={() => onOpenApp(app.package)}
+              accessibilityLabel={`Abrir ${app.label}`}
+              style={styles.dockButton}
+            >
+              <Image source={app.icon} style={styles.dockIcon} contentFit="contain" transition={0} />
+            </Touch>
+          ))}
       </View>
-
-      <Touch
-        onPress={onTogglePage}
-        accessibilityLabel={page === 'painel' ? 'Mostrar todos os apps' : 'Voltar ao painel'}
-        style={styles.toggle}
-      >
-        {page === 'painel' ? (
-          <GridIcon size={30} color={colors.text} />
-        ) : (
-          <DashboardIcon size={30} color={colors.text} />
-        )}
-      </Touch>
     </View>
   );
 }
@@ -101,32 +116,36 @@ const styles = StyleSheet.create({
     width: sizes.rail,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   top: {
     alignItems: 'center',
-    gap: 2,
+    gap: 1,
   },
   batteryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  clock: {
-    marginTop: 2,
-  },
   speed: {
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
-  dock: {
+  buttons: {
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
+  },
+  navButton: {
+    width: BUTTON,
+    height: BUTTON,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dockButton: {
-    width: DOCK_BUTTON,
-    height: DOCK_BUTTON,
-    borderRadius: DOCK_BUTTON / 2,
+    width: BUTTON,
+    height: BUTTON,
+    borderRadius: BUTTON / 2,
     backgroundColor: '#1F2025',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
@@ -134,14 +153,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dockIcon: {
-    width: DOCK_ICON,
-    height: DOCK_ICON,
-  },
-  toggle: {
-    width: DOCK_BUTTON,
-    height: DOCK_BUTTON,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 42,
+    height: 42,
   },
 });

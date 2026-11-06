@@ -44,6 +44,21 @@ export type PlayerAction = {
   iconUri: string | null;
 };
 
+/** App de música instalado (achado pelo serviço de mídia, como no Android Auto). */
+export type MediaApp = {
+  packageName: string;
+  label: string;
+};
+
+/** Sessão de mídia aberta agora (um player com música carregada). */
+export type MediaSession = {
+  packageName: string;
+  appName: string;
+  isPlaying: boolean;
+  title: string;
+  artist: string;
+};
+
 export type MediaKeysEvents = {
   onNowPlayingChange: (event: { nowPlaying: NowPlayingInfo | null }) => void;
 };

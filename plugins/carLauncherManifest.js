@@ -53,6 +53,24 @@ function addPackageQueries(androidManifest, packages) {
   return androidManifest;
 }
 
+/**
+ * Declara uma consulta por "intent" em <queries>: o app passa a enxergar
+ * todos os apps que respondem a essa ação (ex.: todos os apps de música).
+ */
+function addIntentQuery(androidManifest, action) {
+  const manifest = androidManifest.manifest;
+  if (!Array.isArray(manifest.queries) || manifest.queries.length === 0) {
+    manifest.queries = [{}];
+  }
+  const queries = manifest.queries[0];
+  if (!Array.isArray(queries.intent)) queries.intent = [];
+  const exists = queries.intent.some(
+    (i) => Array.isArray(i.action) && i.action.some((a) => a.$ && a.$['android:name'] === action),
+  );
+  if (!exists) queries.intent.push({ action: [{ $: { 'android:name': action } }] });
+  return androidManifest;
+}
+
 function findMainActivity(androidManifest) {
   const app = androidManifest.manifest.application && androidManifest.manifest.application[0];
   const activities = (app && app.activity) || [];
@@ -95,9 +113,14 @@ function setSensorLandscape(androidManifest, enabled) {
   return androidManifest;
 }
 
+/** Ação dos apps de mídia (a mesma que o Android Auto usa para achá-los). */
+const MEDIA_BROWSER_ACTION = 'android.media.browse.MediaBrowserService';
+
 module.exports = {
   normalizeApps,
   addPackageQueries,
+  addIntentQuery,
+  MEDIA_BROWSER_ACTION,
   setHomeLauncher,
   setSensorLandscape,
   CATEGORY_HOME,

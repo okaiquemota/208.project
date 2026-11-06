@@ -14,7 +14,7 @@ export type InstalledApp = CarApp & {
 };
 
 /** Pega o ícone; se o app não existir, devolve null (a função rejeita ou devolve ""). */
-async function loadIcon(pkg: string): Promise<string | null> {
+export async function loadIcon(pkg: string): Promise<string | null> {
   try {
     const icon = await IntentLauncher.getApplicationIconAsync(pkg);
     return icon ? icon : null;

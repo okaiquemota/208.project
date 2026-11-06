@@ -1,4 +1,7 @@
 import {
+  mergeMediaApps,
+  parseMediaApps,
+  parseSessions,
   currentPositionMs,
   formatRemaining,
   formatTrackTime,
@@ -138,5 +141,46 @@ describe('tocando agora: cor do fundo pela capa', () => {
     expect(tintFromArtwork(null)).toBe('#1B2A4A');
     expect(tintFromArtwork('#000000')).toBe('#1B2A4A');
     expect(tintFromArtwork('xx', '#111111')).toBe('#111111');
+  });
+});
+
+describe('qualquer app de música', () => {
+  it('valida a lista de apps de música', () => {
+    expect(
+      parseMediaApps([
+        { packageName: 'com.spotify.music', label: 'Spotify' },
+        { packageName: 'com.spotify.music', label: 'Repetido' },
+        { packageName: 'deezer.android.app' },
+        { label: 'sem pacote' },
+        null,
+      ]),
+    ).toEqual([
+      { packageName: 'com.spotify.music', label: 'Spotify' },
+      { packageName: 'deezer.android.app', label: 'deezer.android.app' },
+    ]);
+    expect(parseMediaApps('x')).toEqual([]);
+  });
+
+  it('valida as sessões', () => {
+    expect(parseSessions([{ packageName: 'com.x.y', isPlaying: true, title: 'T' }, {}])).toEqual([
+      { packageName: 'com.x.y', appName: 'com.x.y', isPlaying: true, title: 'T', artist: '' },
+    ]);
+  });
+
+  it('junta apps e sessões: tocando primeiro, depois com sessão, depois o resto', () => {
+    const apps = [
+      { packageName: 'a.deezer', label: 'Deezer' },
+      { packageName: 'a.spotify', label: 'Spotify' },
+      { packageName: 'a.ytmusic', label: 'YT Music' },
+    ];
+    const sessions = [
+      { packageName: 'a.ytmusic', appName: 'YT Music', isPlaying: false, title: '', artist: '' },
+      { packageName: 'a.spotify', appName: 'Spotify', isPlaying: true, title: 'X', artist: 'Y' },
+      { packageName: 'a.chrome', appName: 'Chrome', isPlaying: false, title: '', artist: '' },
+    ];
+    const merged = mergeMediaApps(apps, sessions);
+    expect(merged.map((m) => m.label)).toEqual(['Spotify', 'YT Music', 'Chrome', 'Deezer']);
+    expect(merged[0]!.session?.isPlaying).toBe(true);
+    expect(merged[3]!.session).toBeNull();
   });
 });

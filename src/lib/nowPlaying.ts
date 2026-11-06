@@ -1,9 +1,14 @@
 // "Tocando agora": validação dos dados do player, posição da música em tempo
 // real, formato de tempo e a cor de fundo tirada da capa.
 
-import type { NowPlayingInfo, PlayerAction } from '../../modules/media-keys/src/MediaKeys.types';
+import type {
+  MediaApp,
+  MediaSession,
+  NowPlayingInfo,
+  PlayerAction,
+} from '../../modules/media-keys/src/MediaKeys.types';
 
-export type { NowPlayingInfo, PlayerAction };
+export type { MediaApp, MediaSession, NowPlayingInfo, PlayerAction };
 
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -118,4 +123,60 @@ export function tintFromArtwork(hex: string | null, fallback = '#1B2A4A'): strin
     g: Math.min(255, sat.g * k),
     b: Math.min(255, sat.b * k),
   });
+}
+
+/** Lista de apps de música vinda do Kotlin, validada. */
+export function parseMediaApps(raw: unknown): MediaApp[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: MediaApp[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null) continue;
+    const r = item as Record<string, unknown>;
+    const packageName = str(r.packageName);
+    if (!packageName || seen.has(packageName)) continue;
+    seen.add(packageName);
+    out.push({ packageName, label: str(r.label) || packageName });
+  }
+  return out;
+}
+
+/** Sessões de mídia vindas do Kotlin, validadas. */
+export function parseSessions(raw: unknown): MediaSession[] {
+  if (!Array.isArray(raw)) return [];
+  const out: MediaSession[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null) continue;
+    const r = item as Record<string, unknown>;
+    const packageName = str(r.packageName);
+    if (!packageName) continue;
+    out.push({
+      packageName,
+      appName: str(r.appName) || packageName,
+      isPlaying: r.isPlaying === true,
+      title: str(r.title),
+      artist: str(r.artist),
+    });
+  }
+  return out;
+}
+
+/**
+ * Junta os apps de música instalados com as sessões abertas: cada app vem
+ * com a sessão dele (se houver). Apps com sessão tocando aparecem primeiro.
+ */
+export function mergeMediaApps(
+  apps: MediaApp[],
+  sessions: MediaSession[],
+): (MediaApp & { session: MediaSession | null })[] {
+  const byPkg = new Map(sessions.map((s) => [s.packageName, s]));
+  const list = apps.map((a) => ({ ...a, session: byPkg.get(a.packageName) ?? null }));
+  // Sessões de apps que não apareceram na busca (ex.: navegador tocando áudio).
+  for (const s of sessions) {
+    if (!apps.some((a) => a.packageName === s.packageName)) {
+      list.push({ packageName: s.packageName, label: s.appName, session: s });
+    }
+  }
+  const rank = (x: { session: MediaSession | null }) => (x.session?.isPlaying ? 0 : x.session ? 1 : 2);
+  return list.sort((a, b) => rank(a) - rank(b));
 }

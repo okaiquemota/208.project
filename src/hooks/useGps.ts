@@ -70,9 +70,18 @@ async function readServicesEnabled(): Promise<boolean> {
   }
 }
 
+/** Última posição conhecida (para clima e altitude). */
+export type GpsPosition = {
+  latitude: number;
+  longitude: number;
+  /** Altitude em metros (pode faltar). */
+  altitude: number | null;
+};
+
 export type GpsState = {
   status: GpsStatus;
   trip: TripState;
+  position: GpsPosition | null;
   /** Precisão da última leitura, em metros. */
   accuracyM: number | null;
   /** Se a permissão foi negada de vez (o Android não pergunta mais). */
@@ -90,6 +99,7 @@ export function useGps(): GpsState {
   const [canAskAgain, setCanAskAgain] = useState(true);
   const [servicesOn, setServicesOn] = useState<boolean | null>(null);
   const [accuracyM, setAccuracyM] = useState<number | null>(null);
+  const [position, setPosition] = useState<GpsPosition | null>(null);
   const [lastFixAt, setLastFixAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const watchKey = useRef(0);
@@ -150,6 +160,11 @@ export function useGps(): GpsState {
         if (cancelled || key !== watchKey.current) return;
         dispatch({ type: 'fix', fix: toFix(loc) });
         setAccuracyM(loc.coords.accuracy);
+        setPosition({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+          altitude: loc.coords.altitude,
+        });
         setLastFixAt(Date.now());
       },
       () => {
@@ -199,6 +214,7 @@ export function useGps(): GpsState {
   return {
     status,
     trip,
+    position,
     accuracyM,
     canAskAgain,
     resetTrip: reset,

@@ -5,6 +5,8 @@
 const {
   normalizeApps,
   addPackageQueries,
+  addIntentQuery,
+  MEDIA_BROWSER_ACTION,
   setHomeLauncher,
   setSensorLandscape,
   CATEGORY_HOME,
@@ -114,6 +116,19 @@ describe('withCarLauncher: <queries>', () => {
     delete m.manifest.queries;
     addPackageQueries(m, ['com.waze']);
     expect(m.manifest.queries).toEqual([{ package: [{ $: { 'android:name': 'com.waze' } }] }]);
+  });
+});
+
+describe('withCarLauncher: enxergar os apps de música', () => {
+  it('adiciona a consulta do MediaBrowserService uma vez só', () => {
+    const m = sampleManifest();
+    addIntentQuery(m, MEDIA_BROWSER_ACTION);
+    addIntentQuery(m, MEDIA_BROWSER_ACTION);
+    const intents = (m.manifest.queries[0] as unknown as { intent: { action?: Node[] }[] }).intent;
+    const actions = intents.flatMap((i) => (i.action ?? []).map((a) => a.$?.['android:name']));
+    expect(actions.filter((a) => a === MEDIA_BROWSER_ACTION)).toHaveLength(1);
+    // A consulta que já existia (abrir links) continua lá.
+    expect(actions).toContain('android.intent.action.VIEW');
   });
 });
 

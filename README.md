@@ -4,34 +4,53 @@ App Android que transforma um **Samsung Galaxy M51** numa segunda multimídia, n
 
 Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development build (não roda no Expo Go, porque tem código nativo próprio).
 
-**Tela cheia:** o player é o card principal; velocidade, viagem e volume ficam em widgets ao lado.
+**Telas** (navegação pela barra lateral):
+
+| Tela | O que tem |
+| --- | --- |
+| **Início** | Tela modular: um card principal (player **ou** velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
+| **Música** | Player grande + a lista de **todos os apps de música do celular**, achados sozinhos (Spotify, YT Music, Deezer, Amazon Music, rádio, podcasts…). Mostra o que cada um está tocando e deixa escolher qual o painel acompanha. |
+| **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
+| **Ajustes** | Montar a tela de início, cor de destaque, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
 
 ```
 ┌──────┬──────────────────────────────────┬──────────────┐
-│ 78%  │  (capa desfocada no fundo)       │ ➤NE  ▂▄▆ ±4 m│
-│14:32 │ ┌────────┐ TOCANDO NO SPOTIFY    │ 87 km/h      │
-│qui, 5│ │  capa  │ Céu Aberto            │ ▮▮▮▮▮▮▯▯▯▯▯▯ │
-│ (W)  │ └────────┘ Banda de Exemplo      ├──────────────┤
-│ (S)  │ ━━━━━━━━━━●──────────────  -2:09 │ VIAGEM (2×2) │
-│ (Z)  │   ♥    ⏮     ( ⏸ )     ⏭    ⤮   ├──────────────┤
-│  ▦   │                                  │ 🔈 ▁▂▃▅▆▇ 🔊 │
+│ 78%  │  (capa desfocada no fundo)       │  widget 1    │
+│14:32 │ ┌────────┐ TOCANDO NO SPOTIFY    │              │
+│      │ │  capa  │ Céu Aberto            ├──────────────┤
+│  ⌂   │ └────────┘ Banda de Exemplo      │  widget 2    │
+│  ♫   │ ━━━━━━━━━━●──────────────  -2:09 │              │
+│  ▦   │   ♥    ⏮     ( ⏸ )     ⏭    ⤮   ├──────────────┤
+│ (W)  │                                  │  widget 3    │
 └──────┴──────────────────────────────────┴──────────────┘
 ```
 
-**Em tela dividida com o Waze** (o Waze na outra metade): barra lateral com a velocidade + o player, com o volume nos botões dos lados.
+Em **tela dividida com o Waze** (largura menor que 700 dp), fica só a barra lateral (com a velocidade) e o card principal.
 
-## O que tem nesta versão
+### Widgets da tela de início
 
-| Função | Como funciona |
+| Widget | O que mostra |
 | --- | --- |
-| **Tocando agora** | No estilo do Spotify: a capa desfocada vira o fundo do card, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio player (no Spotify: **curtir** e **aleatório/repetir**, com os ícones dele). Funciona com Spotify, YT Music, Deezer ou qualquer player. Precisa liberar o **Acesso a notificações** uma vez (veja abaixo). |
-| **Controles de música** | Anterior, play/pause, próxima e um widget de volume com barra em degraus. Funcionam mesmo sem o acesso liberado. |
-| **Velocidade** | GPS a cada 1 s com precisão máxima. Número grande, barra de "LEDs" que fica laranja/vermelha acima de 120 km/h, bússola (N, NE, L, SE, S, SO, O, NO) e sinal do GPS em barrinhas. |
-| **Viagem** | Distância, tempo em movimento, média e máxima, cada uma com seu ícone. **Segure o widget por 0,8 s para zerar** (o celular vibra). |
-| **Barra lateral** | Bateria, hora e 3 apps fixos (um de navegação, um de música, um de comunicação). O botão de baixo alterna entre o painel e a grade com todos os apps. |
-| **Bateria** | Fica laranja quando está **na bateria** ou quando o nível cai mesmo na tomada (**USB fraca**), porque a USB do carro pode não dar conta. |
-| **Tela dividida** | Com o Waze ao lado, o painel encolhe para a barra lateral (com a velocidade) e o player. |
-| **Tela** | Paisagem pelos dois lados, tela cheia, sempre ligada e fundo preto (AMOLED). A cada minuto a interface se desloca 1–2 dp para evitar burn-in. |
+| **Velocidade** | Número grande, barra de "LEDs" (fica vermelha acima do limite escolhido), bússola e sinal do GPS. Também pode ser o card principal, em tamanho grande. |
+| **Viagem** | Distância, tempo em movimento, média e máxima. Segure 0,8 s para zerar. |
+| **Volume** | Volume da música com barra em degraus. |
+| **Relógio** | Hora grande, dia da semana e data. |
+| **Bateria** | Porcentagem, barra e aviso de "USB fraca" (a carga caindo mesmo na tomada). |
+| **Clima** | Temperatura, tempo e mín/máx do dia onde você está ([Open-Meteo](https://open-meteo.com), gratuito, sem cadastro). Atualiza a cada 20 min ou a cada ~10 km. Precisa de internet. |
+| **Bússola** | Direção em graus e ponto cardeal, e a altitude. |
+| **Mini player** | A música atual em tamanho pequeno (quando o card principal é a velocidade). |
+| **Atalhos** | Quatro apps de acesso rápido. |
+
+### Player de música
+
+- Funciona com **qualquer app de música**, não só o Spotify. O painel acompanha o que estiver tocando; nos Ajustes ou na tela Música dá para fixar um player.
+- No estilo do Spotify: capa desfocada no fundo, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio app (no Spotify: curtir e aleatório/repetir).
+- Capa, título e progresso precisam do **Acesso a notificações** (veja abaixo). Sem ele, os botões continuam funcionando.
+
+### Outros recursos
+
+- **Bateria**: fica laranja na barra lateral quando está na bateria ou com USB fraca.
+- **Tela**: paisagem pelos dois lados, tela cheia, sempre ligada, fundo preto (AMOLED) e deslocamento anti burn-in de 1–2 dp por minuto.
 
 ## Primeira vez no M51
 
@@ -178,17 +197,18 @@ Cores, tamanhos, a fonte e o limite de 120 km/h ficam em `src/config/theme.ts`.
 ```
 app.json                  nome, pacote, paisagem, fonte Inter, plugins e lista de atalhos
 eas.json                  perfis de build do EAS (development e preview → APK)
-App.tsx                   raiz: esconde as barras, mantém a tela ligada
+App.tsx                   raiz: barras escondidas, tela ligada, ajustes salvos
 plugins/
-  withCarLauncher.js      config plugin: <queries>, tela inicial e paisagem
+  withCarLauncher.js      config plugin: <queries>, apps de música, tela inicial e paisagem
   carLauncherManifest.js  funções que mexem no AndroidManifest (testadas)
-modules/media-keys/       módulo Expo local em Kotlin: música, volume, tela dividida
+modules/media-keys/       módulo Expo local em Kotlin: música de qualquer app, volume, tela dividida
 src/
   config/                 tema (cores, fonte) e leitura da lista de atalhos
   lib/                    funções puras, sem React, todas com teste
-  hooks/                  ligam o app ao sistema (GPS, bateria, música…)
-  components/             Rail, NowPlayingCard, InstrumentCards, AppGrid…
-  screens/DashboardScreen.tsx  monta o layout (tela cheia ou dividida)
+  state/settings.tsx      ajustes salvos no celular, para todas as telas
+  hooks/                  ligam o app ao sistema (GPS, bateria, música, clima…)
+  components/             barra lateral, player, widgets, grade de apps
+  screens/                Início, Música, Ajustes e a "casca" (DashboardScreen)
 __tests__/                testes (Jest)
 ```
 
@@ -203,15 +223,19 @@ __tests__/                testes (Jest)
   - **salto acima de 250 km/h é descartado**;
   - **sem velocidade do GPS** (`speed` null ou negativo): calcula por distância ÷ tempo.
 - **`nowPlaying.ts`**: confere os dados do player, calcula onde a música está agora (a barra anda sozinha entre uma leitura e outra) e tira a cor de fundo da capa, escurecida para o texto branco continuar legível.
-- **`carApps.ts`**: valida a lista de atalhos e escolhe os 3 apps da barra lateral.
+- **`carApps.ts`**: valida a lista de atalhos e escolhe os apps fixos da barra lateral.
+- **`settings.ts`**: os ajustes (widgets da tela de início, cor, alerta, player). Valida o que está salvo: um ajuste corrompido volta ao padrão em vez de derrubar o app. Escolher um widget que já está em outra posição troca os dois de lugar.
+- **`weather.ts`**: monta o pedido ao Open-Meteo e traduz o código do tempo para texto e ícone em português.
+- **`widgets.ts`**: barrinhas do sinal do GPS, LEDs do velocímetro e degraus do volume.
 - **`battery.ts`**: além do "carregando/descarregando" do Android, guarda o maior nível visto desde que plugou. Se cair 2 pontos ainda na tomada, avisa "USB fraca".
 - **`geo.ts`, `burnIn.ts`, `datetime.ts`, `format.ts`, `gauge.ts`**: distância e rumo, deslocamento anti burn-in, data em português, números no padrão brasileiro e geometria do anel.
 
 **Módulo Kotlin (`modules/media-keys`).** Faz três coisas que o JavaScript sozinho não consegue:
 
-1. **Lê o que está tocando.** Com o "Acesso a notificações" liberado, o Android deixa ler a *sessão de mídia* de qualquer player: título, artista, capa, duração e posição. A capa vira um arquivo JPEG e a cor média dela tinge o card. Quando a música troca ou pausa, o Kotlin avisa o JavaScript na hora.
-2. **Controla o player.** Com acesso, manda tocar, pausar e pular direto para o player. Sem acesso, "aperta" as teclas de mídia, as mesmas de um fone Bluetooth. O volume muda sem o popup do sistema.
-3. **Abre apps ao lado.** Pede ao Android para abrir o app na outra metade da tela quando o painel está em tela dividida.
+1. **Acha todos os apps de música.** Procura os apps que oferecem o serviço de mídia (`MediaBrowserService`), do mesmo jeito que o Android Auto. Por isso a lista aparece sozinha, sem configurar nada. Para o Android 11+ deixar o app enxergar esses apps, o plugin declara essa busca em `<queries>`.
+2. **Lê o que está tocando.** Com o "Acesso a notificações" liberado, o Android deixa ler a *sessão de mídia* de qualquer player: título, artista, capa, duração e posição. A capa vira um arquivo JPEG e a cor média dela tinge o card. Quando a música troca ou pausa, o Kotlin avisa o JavaScript na hora.
+3. **Controla o player.** Com acesso, manda tocar, pausar e pular direto para o player. Sem acesso, "aperta" as teclas de mídia, as mesmas de um fone Bluetooth. O volume muda sem o popup do sistema.
+4. **Abre apps ao lado.** Pede ao Android para abrir o app na outra metade da tela quando o painel está em tela dividida.
 
 O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolve `null` e o resto do app continua funcionando.
 

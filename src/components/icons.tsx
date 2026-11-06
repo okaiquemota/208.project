@@ -92,3 +92,109 @@ export function SignalBars({ bars, color, size = 18 }: { bars: number; color: st
     </Svg>
   );
 }
+
+/** Casa (tela de início). */
+export const HomeIcon = make('M12 3.2 2.5 11h2.7v9.3h5.3v-6h3v6h5.3V11h2.7z');
+/** Engrenagem (ajustes). */
+export const GearIcon = make(
+  'M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.2 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.4A3.4 3.4 0 1 1 13 8.6a3.4 3.4 0 0 1 0 6.8z',
+);
+/** Rosa dos ventos (bússola). */
+export const CompassIcon = make(
+  'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm3.8 4.2-2 5.6-5.6 2 2-5.6zm-3.8 3a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6z',
+);
+/** Montanha (altitude). */
+export const MountainIcon = make('M2 19 9 7l3.6 6.2L15 9.5 22 19z');
+/** Sinal de "ok" (marcado). */
+export const CheckIcon = make('M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 11-11-1.4-1.4z');
+
+type WeatherIconName = 'sol' | 'lua' | 'parcial' | 'nublado' | 'neblina' | 'garoa' | 'chuva' | 'tempestade' | 'neve';
+
+/** Ícones do clima, coloridos. */
+export function WeatherGlyph({ name, size = 48 }: { name: WeatherIconName; size?: number }) {
+  const sun = <Path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" fill="#FFD60A" />;
+  const rays = (
+    <Path
+      d="M11 1h2v3h-2zM11 20h2v3h-2zM1 11h3v2H1zM20 11h3v2h-3zM4.2 5.6l1.4-1.4 2.1 2.1-1.4 1.4zM16.3 17.7l1.4-1.4 2.1 2.1-1.4 1.4zM4.2 18.4l2.1-2.1 1.4 1.4-2.1 2.1zM16.3 6.3l2.1-2.1 1.4 1.4-2.1 2.1z"
+      fill="#FFD60A"
+    />
+  );
+  const cloud = (color: string) => (
+    <Path d="M7 19a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5a4.25 4.25 0 0 1-.5 8.5z" fill={color} />
+  );
+  const drops = (color: string, long = true) => (
+    <Path
+      d={long ? 'M8 20.5l-1 2.5M12 20.5l-1 2.5M16 20.5l-1 2.5' : 'M8 20.5l-.5 1.3M12 20.5l-.5 1.3M16 20.5l-.5 1.3'}
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+  );
+  let content;
+  switch (name) {
+    case 'sol':
+      content = (
+        <>
+          {rays}
+          {sun}
+        </>
+      );
+      break;
+    case 'lua':
+      content = <Path d="M14.5 3a9 9 0 1 0 6.5 13.8A7.5 7.5 0 0 1 14.5 3z" fill="#E5E5EA" />;
+      break;
+    case 'parcial':
+      content = (
+        <>
+          <Path d="M9 3a5 5 0 0 1 4.9 4A6 6 0 0 0 8 10.3 5 5 0 0 1 9 3z" fill="#FFD60A" />
+          {cloud('#E5E5EA')}
+        </>
+      );
+      break;
+    case 'nublado':
+      content = cloud('#C7C7CC');
+      break;
+    case 'neblina':
+      content = (
+        <Path d="M3 9h18v2H3zM5 13h14v2H5zM3 17h18v2H3z" fill="#AEAEB2" />
+      );
+      break;
+    case 'garoa':
+      content = (
+        <>
+          <Path d="M7 16a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17.1 8 3.9 3.9 0 0 1 17 16z" fill="#C7C7CC" />
+          {drops('#64D2FF', false)}
+        </>
+      );
+      break;
+    case 'chuva':
+      content = (
+        <>
+          <Path d="M7 16a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17.1 8 3.9 3.9 0 0 1 17 16z" fill="#AEAEB2" />
+          {drops('#0A84FF')}
+        </>
+      );
+      break;
+    case 'tempestade':
+      content = (
+        <>
+          <Path d="M7 15a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17.1 7 3.9 3.9 0 0 1 17 15z" fill="#8E8E93" />
+          <Path d="M12.5 14 9 19h3l-1 4 4-6h-3l1.5-3z" fill="#FFD60A" />
+        </>
+      );
+      break;
+    case 'neve':
+      content = (
+        <>
+          <Path d="M7 16a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17.1 8 3.9 3.9 0 0 1 17 16z" fill="#E5E5EA" />
+          <Path d="M7 19h2v2H7zM11 20h2v2h-2zM15 19h2v2h-2z" fill="#FFFFFF" />
+        </>
+      );
+      break;
+  }
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {content}
+    </Svg>
+  );
+}

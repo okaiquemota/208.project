@@ -8,7 +8,8 @@
 //   }]
 //
 // O que ele faz no `npx expo prebuild` (que gera a pasta android/):
-// 1. Declara os pacotes da lista em <queries> no AndroidManifest (Android 11+).
+// 1. Declara os pacotes da lista em <queries> no AndroidManifest (Android 11+),
+//    e também uma consulta que enxerga todos os apps de música instalados.
 // 2. Repassa a lista para `extra.carApps`, que o app lê com expo-constants.
 //    Assim a lista de atalhos existe num lugar só.
 // 3. asHomeLauncher: true → o app pode virar a tela inicial do celular.
@@ -18,6 +19,8 @@ const { withAndroidManifest } = require('expo/config-plugins');
 const {
   normalizeApps,
   addPackageQueries,
+  addIntentQuery,
+  MEDIA_BROWSER_ACTION,
   setHomeLauncher,
   setSensorLandscape,
 } = require('./carLauncherManifest');
@@ -37,6 +40,8 @@ const withCarLauncher = (config, props = {}) => {
       manifest,
       apps.map((a) => a.package),
     );
+    // Enxergar todos os apps de música instalados, mesmo os fora da lista.
+    manifest = addIntentQuery(manifest, MEDIA_BROWSER_ACTION);
     manifest = setHomeLauncher(manifest, asHomeLauncher);
     manifest = setSensorLandscape(manifest, sensorLandscape);
     modConfig.modResults = manifest;

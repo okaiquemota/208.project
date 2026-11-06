@@ -1,54 +1,64 @@
-// Tela "Apps": grade de ícones grandes com o ícone real de cada app instalado,
-// como a tela inicial do CarPlay.
+// Grade de ícones grandes, como a tela inicial do CarPlay. Cada item é um app
+// (ícone real) ou um atalho interno (ex.: Ajustes, com ícone desenhado).
 
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { colors, font, sizes } from '../config/theme';
-import type { InstalledApp } from '../hooks/useInstalledApps';
 import { Touch } from './Touch';
 
-type Props = {
-  apps: InstalledApp[];
-  loading: boolean;
-  onOpen: (pkg: string) => void;
-  columns: number;
+export type GridTile = {
+  key: string;
+  label: string;
+  /** Ícone do app ("data:image/png;base64,…") ou um desenho pronto. */
+  icon: string | ReactNode | null;
+  onPress: () => void;
 };
 
-const ICON = 76;
+type Props = {
+  tiles: GridTile[];
+  columns: number;
+  emptyText?: string;
+};
 
-export function AppGrid({ apps, loading, onOpen, columns }: Props) {
-  if (!loading && apps.length === 0) {
+const ICON = 72;
+
+export function AppGrid({ tiles, columns, emptyText }: Props) {
+  if (tiles.length === 0) {
     return (
       <View style={[styles.card, styles.empty]}>
-        <Text style={font(17, '600', colors.text2)}>Nenhum app da lista está instalado</Text>
+        <Text style={font(17, '600', colors.text2)}>{emptyText ?? 'Nada para mostrar'}</Text>
       </View>
     );
   }
 
   // Divide em linhas para centralizar a última, que pode ficar incompleta.
-  const rows: InstalledApp[][] = [];
-  for (let i = 0; i < apps.length; i += columns) rows.push(apps.slice(i, i + columns));
+  const rows: GridTile[][] = [];
+  for (let i = 0; i < tiles.length; i += columns) rows.push(tiles.slice(i, i + columns));
 
   return (
     <View style={styles.card}>
-      {rows.map((row, r) => (
-        <View key={r} style={styles.row}>
-          {row.map((app) => (
-            <Touch
-              key={app.package}
-              onPress={() => onOpen(app.package)}
-              accessibilityLabel={`Abrir ${app.label}`}
-              style={styles.item}
-            >
-              <Image source={app.icon} style={styles.icon} contentFit="contain" transition={0} />
-              <Text style={font(14, '600')} numberOfLines={1} allowFontScaling={false}>
-                {app.label}
-              </Text>
-            </Touch>
-          ))}
-        </View>
-      ))}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {rows.map((row, r) => (
+          <View key={r} style={styles.row}>
+            {row.map((tile) => (
+              <Touch key={tile.key} onPress={tile.onPress} accessibilityLabel={`Abrir ${tile.label}`} style={styles.item}>
+                <View style={styles.iconBox}>
+                  {typeof tile.icon === 'string' ? (
+                    <Image source={tile.icon} style={styles.icon} contentFit="contain" transition={0} />
+                  ) : (
+                    tile.icon
+                  )}
+                </View>
+                <Text style={font(14, '600')} numberOfLines={1} allowFontScaling={false}>
+                  {tile.label}
+                </Text>
+              </Touch>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -58,8 +68,13 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: sizes.cardRadius,
     backgroundColor: colors.card,
-    paddingVertical: 18,
+    overflow: 'hidden',
+  },
+  scroll: {
+    flexGrow: 1,
     justifyContent: 'space-evenly',
+    paddingVertical: 18,
+    gap: 12,
   },
   empty: {
     alignItems: 'center',
@@ -75,6 +90,12 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 6,
     borderRadius: sizes.buttonRadius,
+  },
+  iconBox: {
+    width: ICON,
+    height: ICON,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   icon: {
     width: ICON,

@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors } from './src/config/theme';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { SettingsProvider } from './src/state/settings';
 
 export default function App() {
   // Mantém a tela acesa enquanto o painel estiver aberto.
@@ -17,7 +18,9 @@ export default function App() {
     <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar hidden style="light" />
       <NavigationBar hidden />
-      <DashboardScreen />
+      <SettingsProvider>
+        <DashboardScreen />
+      </SettingsProvider>
     </SafeAreaProvider>
   );
 }

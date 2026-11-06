@@ -7,13 +7,14 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, Vibration, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { colors, font, SPEED_ALERT_KMH, SPEED_MAX_KMH, sizes, tabular } from '../config/theme';
+import { colors, font, SPEED_MAX_KMH, sizes, tabular } from '../config/theme';
 import type { GpsState } from '../hooks/useGps';
 import type { MediaState } from '../hooks/useMedia';
 import { formatDuration, formatKm, formatKmh } from '../lib/format';
 import { toCardinal } from '../lib/geo';
 import { averageKmh } from '../lib/trip';
 import { gpsSignalBars, speedLeds, volumeSegments } from '../lib/widgets';
+import { useAccent, useSettings } from '../state/settings';
 import {
   ClockIcon,
   GaugeIcon,
@@ -30,38 +31,44 @@ import { Touch } from './Touch';
 
 const LED_COUNT = 24;
 
-export function SpeedWidget({ gps }: { gps: GpsState }) {
+/** Velocidade. `large` = versão do card principal (número enorme). */
+export function SpeedWidget({ gps, large }: { gps: GpsState; large?: boolean }) {
   const { status, trip } = gps;
+  const accent = useAccent();
+  const { speedAlertKmh } = useSettings().settings;
+  // 0 nos Ajustes = sem alerta (nunca fica vermelho).
+  const alertAt = speedAlertKmh > 0 ? speedAlertKmh : Number.POSITIVE_INFINITY;
   const live = status === 'ok';
   const speed = live ? trip.speedKmh : null;
-  const alert = speed !== null && speed > SPEED_ALERT_KMH;
+  const alert = speed !== null && speed > alertAt;
   const heading = trip.headingDeg;
-  const leds = speedLeds(speed, SPEED_MAX_KMH, SPEED_ALERT_KMH, LED_COUNT);
-  const glow = alert ? colors.red : colors.accent;
+  const leds = speedLeds(speed, SPEED_MAX_KMH, alertAt, LED_COUNT);
+  const glow = alert ? colors.red : accent.main;
+  const numberSize = large ? 150 : 68;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, large && styles.cardLarge]}>
       {/* Brilho suave atrás do número */}
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
         <Defs>
-          <RadialGradient id="speed-glow" cx="30%" cy="55%" r="70%">
+          <RadialGradient id={large ? 'speed-glow-l' : 'speed-glow'} cx="30%" cy="55%" r="70%">
             <Stop offset="0" stopColor={glow} stopOpacity={live ? 0.28 : 0.08} />
             <Stop offset="1" stopColor={glow} stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        <Rect width="100%" height="100%" fill="url(#speed-glow)" />
+        <Rect width="100%" height="100%" fill={`url(#${large ? 'speed-glow-l' : 'speed-glow'})`} />
       </Svg>
 
       <View style={styles.speedHeader}>
         {live && heading !== null ? (
           <View style={styles.compass}>
-            <NavArrowIcon size={16} color={colors.accentSoft} rotation={heading} />
-            <Text style={font(15, '800')} allowFontScaling={false}>
+            <NavArrowIcon size={large ? 22 : 16} color={accent.soft} rotation={heading} />
+            <Text style={font(large ? 22 : 15, '800')} allowFontScaling={false}>
               {toCardinal(heading)}
             </Text>
           </View>
         ) : (
-          <Text style={font(13, '700', colors.text2)} allowFontScaling={false}>
+          <Text style={font(large ? 16 : 13, '700', colors.text2)} allowFontScaling={false}>
             VELOCIDADE
           </Text>
         )}
@@ -78,29 +85,35 @@ export function SpeedWidget({ gps }: { gps: GpsState }) {
         <Notice text="GPS desligado" action="Ligar" onAction={gps.openLocationSettings} />
       ) : (
         <>
-          <View style={styles.speedRow}>
+          <View style={[styles.speedRow, large && styles.speedRowLarge]}>
             <Text
               style={[
-                font(68, '800', speed === null ? colors.text3 : alert ? colors.red : colors.text),
+                font(numberSize, '800', speed === null ? colors.text3 : alert ? colors.red : colors.text),
                 tabular,
-                styles.speedNumber,
+                { lineHeight: numberSize * 1.12 },
               ]}
               allowFontScaling={false}
             >
               {speed === null ? '--' : formatKmh(speed)}
             </Text>
-            <Text style={font(17, '700', colors.text2)} allowFontScaling={false}>
+            <Text style={font(large ? 26 : 17, '700', colors.text2)} allowFontScaling={false}>
               km/h
             </Text>
           </View>
-          <View style={styles.leds}>
+          <View style={[styles.leds, large && styles.ledsLarge]}>
             {leds.map((led, i) => (
               <View
                 key={i}
                 style={[
                   styles.led,
                   {
-                    backgroundColor: led.on ? (led.alert ? ledAlertColor(i) : ledColor(i)) : colors.fill,
+                    backgroundColor: led.on
+                      ? led.alert
+                        ? ledAlertColor(i)
+                        : i < LED_COUNT * 0.3
+                          ? accent.main
+                          : accent.soft
+                      : colors.fill,
                   },
                 ]}
               />
@@ -112,8 +125,7 @@ export function SpeedWidget({ gps }: { gps: GpsState }) {
   );
 }
 
-/** Degradê dos LEDs: azul → ciano até 120; laranja → vermelho depois. */
-const ledColor = (i: number) => (i < LED_COUNT * 0.3 ? colors.accent : colors.accentSoft);
+/** LEDs acima do limite: laranja → vermelho. */
 const ledAlertColor = (i: number) => (i < LED_COUNT * 0.8 ? colors.orange : colors.red);
 
 function GpsStatus({ gps }: { gps: GpsState }) {
@@ -248,6 +260,7 @@ export function TripWidget({ gps }: { gps: GpsState }) {
 const VOLUME_STEPS = 15;
 
 export function VolumeWidget({ media }: { media: MediaState }) {
+  const accent = useAccent();
   const segments = volumeSegments(media.volume.current, media.volume.max, VOLUME_STEPS);
   return (
     <View style={[styles.card, styles.volumeCard]}>
@@ -266,7 +279,7 @@ export function VolumeWidget({ media }: { media: MediaState }) {
             key={i}
             style={[
               styles.volumeBar,
-              { height: 8 + (i / (VOLUME_STEPS - 1)) * 20, backgroundColor: on ? colors.text : colors.fill },
+              { height: 8 + (i / (VOLUME_STEPS - 1)) * 20, backgroundColor: on ? accent.soft : colors.fill },
             ]}
           />
         ))}
@@ -322,8 +335,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
-  speedNumber: {
-    lineHeight: 76,
+  cardLarge: {
+    padding: 24,
+  },
+  speedRowLarge: {
+    alignSelf: 'center',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+  },
+  ledsLarge: {
+    height: 20,
+    gap: 5,
   },
   leds: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@ package br.com.movcode.painel208.mediakeys
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -101,6 +102,15 @@ class MediaKeysModule : Module() {
     Function("hasNotificationAccess") { hasNotificationAccess() }
     Function("openNotificationAccessSettings") { openNotificationAccessSettings() }
     Function("getNowPlaying") { nowPlaying() }
+
+    // Qualquer app de música
+    Function("getMediaApps") { mediaApps() }
+    Function("getSessions") { sessionList() }
+    Function("setPreferredPlayer") { packageName: String? ->
+      preferredPackage = packageName
+      mainHandler.post { emitNowPlaying() }
+      true
+    }
 
     // Tela dividida
     Function("openAdjacent") { packageName: String -> openAdjacent(packageName) }
@@ -213,10 +223,64 @@ class MediaKeysModule : Module() {
     }
   }
 
-  /** O player que está tocando; se nenhum estiver, o mais recente. */
+  /** Player escolhido pelo usuário (null = automático). */
+  @Volatile
+  private var preferredPackage: String? = null
+
+  private fun isPlaying(c: MediaController) = c.playbackState?.state == PlaybackState.STATE_PLAYING
+
+  /**
+   * Qual player o painel mostra e controla:
+   * 1. o preferido, se estiver tocando;
+   * 2. qualquer um que esteja tocando;
+   * 3. o preferido, mesmo pausado;
+   * 4. o mais recente.
+   */
   private fun activeController(): MediaController? {
     val list = sessions()
-    return list.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: list.firstOrNull()
+    val pref = preferredPackage
+    return list.firstOrNull { it.packageName == pref && isPlaying(it) }
+      ?: list.firstOrNull { isPlaying(it) }
+      ?: list.firstOrNull { it.packageName == pref }
+      ?: list.firstOrNull()
+  }
+
+  /** Sessões de mídia abertas agora (um item por app). */
+  private fun sessionList(): List<Map<String, Any?>> {
+    val ctx = context ?: return emptyList()
+    return sessions().distinctBy { it.packageName }.map { c ->
+      mapOf(
+        "packageName" to c.packageName,
+        "appName" to appLabel(ctx, c.packageName),
+        "isPlaying" to isPlaying(c),
+        "title" to (c.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""),
+        "artist" to (c.metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: ""),
+      )
+    }
+  }
+
+  /**
+   * Apps de música/áudio instalados: os que oferecem um MediaBrowserService
+   * (é assim que o Android Auto descobre os apps de mídia). Só entram os que
+   * podem ser abertos pela tela inicial.
+   */
+  private fun mediaApps(): List<Map<String, Any?>> {
+    val ctx = context ?: return emptyList()
+    val pm = ctx.packageManager
+    val intent = Intent("android.media.browse.MediaBrowserService")
+    val infos =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        pm.queryIntentServices(intent, PackageManager.ResolveInfoFlags.of(0))
+      } else {
+        @Suppress("DEPRECATION")
+        pm.queryIntentServices(intent, 0)
+      }
+    return infos
+      .mapNotNull { it.serviceInfo?.packageName }
+      .distinct()
+      .filter { it != ctx.packageName && pm.getLaunchIntentForPackage(it) != null }
+      .map { pkg -> mapOf("packageName" to pkg, "label" to appLabel(ctx, pkg)) }
+      .sortedBy { (it["label"] as String).lowercase() }
   }
 
   private fun startWatching() {
