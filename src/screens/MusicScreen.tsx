@@ -11,6 +11,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CheckIcon, MusicIcon } from '../components/icons';
 import { NowPlayingCard } from '../components/NowPlayingCard';
 import { SpotifyBrowser } from '../components/SpotifyBrowser';
+import { SPOTIFY_PACKAGE } from '../config/spotify';
 import { Touch } from '../components/Touch';
 import { colors, font, sizes } from '../config/theme';
 import type { MediaState } from '../hooks/useMedia';
@@ -27,8 +28,6 @@ type Props = {
   onOpenPlayer: () => void;
   compact: boolean;
 };
-
-const SPOTIFY_PACKAGE = 'com.spotify.music';
 
 export function MusicScreen({ media, library, spotify, playerIcon, defaultPlayerName, onOpenPlayer, compact }: Props) {
   const accent = useAccent();

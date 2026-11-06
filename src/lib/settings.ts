@@ -16,11 +16,13 @@ export const SIDE_WIDGETS = [
   'bussola',
   'miniplayer',
   'atalhos',
+  'curva',
+  'mensagens',
 ] as const;
 export type SideWidgetId = (typeof SIDE_WIDGETS)[number];
 
 /** O que pode ocupar o card principal (o grande, à esquerda). */
-export const MAIN_WIDGETS = ['player', 'velocidade'] as const;
+export const MAIN_WIDGETS = ['player', 'mapa', 'velocidade'] as const;
 export type MainWidgetId = (typeof MAIN_WIDGETS)[number];
 
 /** Quantos widgets cabem na coluna da direita. */
@@ -40,6 +42,10 @@ export type AccentId = keyof typeof ACCENTS;
 export const BACKGROUNDS = ['papel', 'preto'] as const;
 export type BackgroundId = (typeof BACKGROUNDS)[number];
 
+/** Cores do mapa do Waze: escuro (noturno, como o CarPlay) ou claro (o original). */
+export const MAP_THEMES = ['escuro', 'claro'] as const;
+export type MapThemeId = (typeof MAP_THEMES)[number];
+
 /** Opções do alerta de velocidade (km/h). 0 = desligado. */
 export const SPEED_ALERT_OPTIONS = [0, 80, 100, 110, 120, 130, 140] as const;
 
@@ -56,6 +62,8 @@ export type Settings = {
   speedAlertKmh: number;
   /** Pacote do player preferido (ex.: "com.spotify.music"), ou null = automático. */
   preferredPlayer: string | null;
+  /** Cores do mapa do Waze. */
+  mapTheme: MapThemeId;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -64,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
   background: 'papel',
   speedAlertKmh: 120,
   preferredPlayer: null,
+  mapTheme: 'escuro',
 };
 
 /** Nome e descrição de cada widget (aparecem nos Ajustes). */
@@ -78,10 +87,13 @@ export const WIDGET_INFO: Record<SideWidgetId, { nome: string; descricao: string
   bussola: { nome: 'Bússola', descricao: 'Direção e altitude' },
   miniplayer: { nome: 'Mini player', descricao: 'Música atual em tamanho pequeno' },
   atalhos: { nome: 'Atalhos', descricao: 'Quatro apps de acesso rápido' },
+  curva: { nome: 'Próxima curva', descricao: 'Próxima manobra do Waze ou do Maps' },
+  mensagens: { nome: 'WhatsApp', descricao: 'Última mensagem e resposta rápida' },
 };
 
 export const MAIN_INFO: Record<MainWidgetId, { nome: string }> = {
   player: { nome: 'Player de música' },
+  mapa: { nome: 'Mapa ao vivo (Waze)' },
   velocidade: { nome: 'Velocidade grande' },
 };
 
@@ -117,7 +129,9 @@ export function parseSettings(raw: string | null | undefined): Settings {
   const preferred =
     typeof d.preferredPlayer === 'string' && PACKAGE_RE.test(d.preferredPlayer) ? d.preferredPlayer : null;
 
-  return { home: { main, side }, accent, background, speedAlertKmh: speed, preferredPlayer: preferred };
+  const mapTheme = isOneOf(MAP_THEMES, d.mapTheme) ? d.mapTheme : DEFAULT_SETTINGS.mapTheme;
+
+  return { home: { main, side }, accent, background, speedAlertKmh: speed, preferredPlayer: preferred, mapTheme };
 }
 
 const cloneDefaults = (): Settings => ({

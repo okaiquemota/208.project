@@ -1,34 +1,43 @@
-// A "casca" do app: barra lateral + a tela atual (Início, Música, Apps ou
-// Ajustes). Os hooks de sistema (GPS, bateria, música…) rodam aqui, uma vez
+// A "casca" do app: barra lateral + a tela atual (Início, Música, Apps,
+// Ajustes ou Mensagens). Os hooks de sistema (GPS, bateria, música…) rodam aqui, uma vez
 // só, e os dados descem para as telas.
 //
 // Tela cheia (~914 × 411 dp no M51) ou tela dividida com o Waze (largura
 // menor que 700 dp: layout compacto, só o card principal).
 
 import { useMemo, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Linking, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { type EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import MediaKeys from '../../modules/media-keys';
 import { AppGrid, type GridTile } from '../components/AppGrid';
 import { GearIcon } from '../components/icons';
+import type { WazeActions } from '../components/MapHud';
 import { type Page, Rail } from '../components/Rail';
 import { Wallpaper } from '../components/Wallpaper';
 import { CAR_APPS } from '../config/apps';
 import { colors, COMPACT_BELOW_DP, sizes } from '../config/theme';
 import { type BatteryInfo, useBattery } from '../hooks/useBattery';
+import { type CarNotificationsState, useCarNotifications } from '../hooks/useCarNotifications';
 import { useBurnInShift } from '../hooks/useBurnInShift';
 import { useClock } from '../hooks/useClock';
 import { type GpsState, useGps } from '../hooks/useGps';
 import { type InstalledApp, useInstalledApps } from '../hooks/useInstalledApps';
 import { type MediaState, useMedia } from '../hooks/useMedia';
 import { type MediaLibrary, useMediaLibrary } from '../hooks/useMediaLibrary';
+import { usePlayer } from '../hooks/usePlayer';
 import { type SpotifyState, useSpotify } from '../hooks/useSpotify';
 import { BURN_IN_MAX_SHIFT, type Offset } from '../lib/burnIn';
 import { pickDockApps } from '../lib/carApps';
+import { wazeFavoriteUrl } from '../lib/wazeMap';
 import { useAccent, useSettings } from '../state/settings';
 import { HomeScreen } from './HomeScreen';
+import { MessagesScreen } from './MessagesScreen';
 import { MusicScreen } from './MusicScreen';
 import { SettingsScreen } from './SettingsScreen';
+
+const CHAT_PACKAGES = ['com.whatsapp', 'com.whatsapp.w4b'];
+const WAZE_PACKAGE = 'com.waze';
 
 export function DashboardScreen() {
   const gps = useGps();
@@ -38,6 +47,8 @@ export function DashboardScreen() {
   const library = useMediaLibrary();
   // Spotify por dentro: reconecta sozinho na abertura se já foi autorizado.
   const spotify = useSpotify();
+  // Próxima curva (Waze/Maps) e WhatsApp, pelas notificações.
+  const notifications = useCarNotifications();
   const shortcuts = useInstalledApps(CAR_APPS);
   const shift = useBurnInShift();
   // Furo da câmera (Infinity-O) e afins: o conteúdo não fica embaixo dele.
@@ -51,6 +62,7 @@ export function DashboardScreen() {
       media={media}
       library={library}
       spotify={spotify}
+      notifications={notifications}
       shortcuts={shortcuts}
       shift={shift}
       insets={insets}
@@ -65,6 +77,7 @@ export type DashboardViewProps = {
   media: MediaState;
   library: MediaLibrary;
   spotify: SpotifyState;
+  notifications: CarNotificationsState;
   shortcuts: { apps: InstalledApp[]; loading: boolean; open: (pkg: string) => void };
   shift: Offset;
   insets: EdgeInsets;
@@ -80,6 +93,7 @@ export function DashboardView({
   media,
   library,
   spotify,
+  notifications,
   shortcuts,
   shift,
   insets,
@@ -90,13 +104,15 @@ export function DashboardView({
   const [page, setPage] = useState<Page>(initialPage);
   const accent = useAccent();
   const { background } = useSettings().settings;
+  // O player do card: sessão de mídia do Android ou conexão direta com o Spotify.
+  const player = usePlayer(media, spotify);
 
   const { apps, open } = shortcuts;
   const dock = useMemo(() => pickDockApps(apps).filter((a) => a.tipo !== 'musica'), [apps]);
   const shortcutApps = useMemo(() => apps.filter((a) => !dock.includes(a)), [apps, dock]);
 
   // Player: o que está tocando; se nada, o preferido; senão o primeiro app de música.
-  const playingPkg = media.nowPlaying?.packageName ?? null;
+  const playingPkg = player.nowPlaying?.packageName ?? null;
   const defaultPlayer =
     library.entries.find((e) => e.packageName === library.preferred) ?? library.entries[0] ?? null;
   const playerPkg = playingPkg ?? defaultPlayer?.packageName ?? null;
@@ -105,6 +121,32 @@ export function DashboardView({
   const openPlayer = () => {
     if (playerPkg) library.open(playerPkg);
   };
+
+  // WhatsApp e Waze: os de verdade, instalados no celular.
+  const whatsapp = apps.find((a) => CHAT_PACKAGES.includes(a.package)) ?? null;
+  const waze = apps.find((a) => a.package === WAZE_PACKAGE) ?? null;
+  // No dock, o WhatsApp abre as mensagens dentro do painel (como no CarPlay).
+  const openDockApp = (pkg: string) => {
+    if (notifications.available && CHAT_PACKAGES.includes(pkg)) setPage('mensagens');
+    else open(pkg);
+  };
+  const badges = whatsapp ? { [whatsapp.package]: notifications.chats.length } : undefined;
+  const wazeActions: WazeActions | null = waze
+    ? {
+        open: () => open(waze.package),
+        navigateTo: (favorite) => {
+          const url = wazeFavoriteUrl(favorite);
+          let opened = false;
+          try {
+            opened = MediaKeys?.openUrlAdjacent(url, WAZE_PACKAGE) ?? false;
+          } catch {
+            opened = false;
+          }
+          if (!opened) void Linking.openURL(url).catch(() => undefined);
+        },
+        icon: waze.icon,
+      }
+    : null;
 
   // Grade de apps: Ajustes + a lista do app.json + apps de música achados sozinhos.
   const tiles: GridTile[] = useMemo(() => {
@@ -137,7 +179,7 @@ export function DashboardView({
     case 'musica':
       content = (
         <MusicScreen
-          media={media}
+          media={player}
           library={library}
           spotify={spotify}
           playerIcon={playerIcon}
@@ -153,19 +195,36 @@ export function DashboardView({
     case 'ajustes':
       content = <SettingsScreen gps={gps} media={media} library={library} onDone={() => setPage('inicio')} />;
       break;
+    case 'mensagens':
+      content = (
+        <MessagesScreen
+          notifications={notifications}
+          hasAccess={media.hasAccess}
+          onOpenAccess={media.openAccessSettings}
+          icon={whatsapp?.icon ?? null}
+          compact={compact}
+        />
+      );
+      break;
     default:
       content = (
         <HomeScreen
           gps={gps}
           battery={battery}
           now={now}
-          media={media}
+          media={player}
           playerIcon={playerIcon}
           defaultPlayerName={defaultPlayer?.label ?? null}
           onOpenPlayer={openPlayer}
           onOpenMusic={() => setPage('musica')}
           shortcutApps={shortcutApps}
           onOpenApp={open}
+          notifications={notifications}
+          notificationAccess={media.hasAccess}
+          onOpenAccess={media.openAccessSettings}
+          onOpenMessages={() => setPage('mensagens')}
+          waze={wazeActions}
+          whatsappIcon={whatsapp?.icon ?? null}
           compact={compact}
         />
       );
@@ -190,7 +249,9 @@ export function DashboardView({
           now={now}
           battery={battery}
           dock={dock}
-          onOpenApp={open}
+          onOpenApp={openDockApp}
+          badges={badges}
+          activeApp={page === 'mensagens' ? (whatsapp?.package ?? null) : null}
           page={page}
           onNavigate={setPage}
           speedKmh={gps.status === 'ok' ? gps.trip.speedKmh : null}

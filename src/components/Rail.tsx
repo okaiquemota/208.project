@@ -1,6 +1,7 @@
 // Barra lateral preta, como no CarPlay/Android Auto:
 // - em cima: bateria, hora e data (e a velocidade, no modo compacto);
-// - no meio: navegação (Início, Música, Apps) e os apps fixos (dock).
+// - no meio: navegação (Início, Música, Apps) e os apps fixos (dock), com
+//   um contador (ex.: conversas novas do WhatsApp).
 
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
@@ -15,13 +16,17 @@ import { useAccent, useSettings } from '../state/settings';
 import { BatteryIcon, BoltIcon, GridIcon, HomeIcon, MusicIcon } from './icons';
 import { Touch } from './Touch';
 
-export type Page = 'inicio' | 'musica' | 'apps' | 'ajustes';
+export type Page = 'inicio' | 'musica' | 'apps' | 'ajustes' | 'mensagens';
 
 type Props = {
   now: Date;
   battery: BatteryInfo;
   dock: InstalledApp[];
   onOpenApp: (pkg: string) => void;
+  /** Contador em cima do ícone de um app do dock (pacote → número). */
+  badges?: Record<string, number>;
+  /** App do dock que está aberto dentro do painel (ganha um anel). */
+  activeApp?: string | null;
   page: Page;
   onNavigate: (page: Page) => void;
   /** Velocidade para mostrar no modo compacto (null = sem leitura). */
@@ -31,7 +36,7 @@ type Props = {
 
 const BUTTON = 56;
 
-export function Rail({ now, battery, dock, onOpenApp, page, onNavigate, speedKmh, compact }: Props) {
+export function Rail({ now, battery, dock, onOpenApp, badges, activeApp, page, onNavigate, speedKmh, compact }: Props) {
   const accent = useAccent();
   const { speedAlertKmh } = useSettings().settings;
   const batteryColor = battery.alert ? colors.orange : colors.text;
@@ -101,9 +106,16 @@ export function Rail({ now, battery, dock, onOpenApp, page, onNavigate, speedKmh
               key={app.package}
               onPress={() => onOpenApp(app.package)}
               accessibilityLabel={`Abrir ${app.label}`}
-              style={styles.dockButton}
+              style={[styles.dockButton, activeApp === app.package && { borderColor: accent.main, borderWidth: 3 }]}
             >
               <Image source={app.icon} style={styles.dockIcon} contentFit="contain" transition={0} />
+              {(badges?.[app.package] ?? 0) > 0 && (
+                <View style={styles.badge}>
+                  <Text style={[font(12, '800'), tabular]} allowFontScaling={false}>
+                    {Math.min(badges?.[app.package] ?? 0, 9)}
+                  </Text>
+                </View>
+              )}
             </Touch>
           ))}
       </View>
@@ -155,5 +167,17 @@ const styles = StyleSheet.create({
   dockIcon: {
     width: 42,
     height: 42,
+  },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 5,
+    borderRadius: 11,
+    backgroundColor: colors.red,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

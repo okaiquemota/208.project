@@ -18,6 +18,39 @@ export const PlayIcon = make('M7.5 4.9v14.2a1 1 0 0 0 1.53.85l11.2-7.1a1 1 0 0 0
 export const PauseIcon = make('M6 4.5h4.2v15H6zM13.8 4.5H18v15h-4.2z');
 export const NextIcon = make('M4.5 5.8v12.4a.9.9 0 0 0 1.4.75l8.7-6.2a.9.9 0 0 0 0-1.5L5.9 5.05a.9.9 0 0 0-1.4.75zM16.5 5h3v14h-3z');
 export const PreviousIcon = make('M19.5 5.8v12.4a.9.9 0 0 1-1.4.75l-8.7-6.2a.9.9 0 0 1 0-1.5l8.7-6.2a.9.9 0 0 1 1.4.75zM4.5 5h3v14h-3z');
+/** Botões do Spotify (desenhos no estilo Material, licença Apache 2.0). */
+export const HeartIcon = make(
+  'M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z',
+);
+export const HeartFilledIcon = make(
+  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z',
+);
+export const ShuffleIcon = make(
+  'M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z',
+);
+export const RepeatIcon = make('M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z');
+export const RepeatOneIcon = make(
+  'M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z',
+);
+/** Setas de manobra (próxima curva), estilo Material, licença Apache 2.0. */
+export const TurnLeftIcon = make('M6.83 11l1.58 1.59L7 14 3 10l4-4 1.41 1.41L6.83 9H15c1.1 0 2 .9 2 2v9h-2v-9H6.83z');
+export const TurnRightIcon = make('M17.17 11l-1.58 1.59L17 14l4-4-4-4-1.41 1.41L17.17 9H9c-1.1 0-2 .9-2 2v9h2v-9h8.17z');
+export const StraightIcon = make('M11 6.83 9.41 8.41 8 7l4-4 4 4-1.41 1.41L13 6.83V21h-2z');
+export const UTurnIcon = make(
+  'M18 9v12h-2V9c0-2.21-1.79-4-4-4S8 6.79 8 9v4.17l1.59-1.59L11 13l-4 4-4-4 1.41-1.41L6 13.17V9c0-3.31 2.69-6 6-6s6 2.69 6 6z',
+);
+export const RoundaboutIcon = make(
+  'M17.65 6.35A7.96 7.96 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z',
+);
+export const FlagIcon = make('M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z');
+/** Maleta (Trabalho). */
+export const WorkIcon = make(
+  'M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z',
+);
+/** Balão de conversa (mensagens). */
+export const ChatIcon = make(
+  'M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8l-4.6 3.7A.9.9 0 0 1 2 21V5a2 2 0 0 1 2-2z',
+);
 /** Seta de voltar (navegação em listas). */
 export const BackIcon = make('M15.7 4.3a1 1 0 0 1 0 1.4L9.41 12l6.3 6.3a1 1 0 1 1-1.42 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.42 0z');
 export const MinusIcon = make('M5 10.75h14v2.5H5z');

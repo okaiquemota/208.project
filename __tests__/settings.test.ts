@@ -91,3 +91,17 @@ describe('configurações: coluna da direita', () => {
     expect(s.home.side).toEqual([null, 'viagem', 'volume']);
   });
 });
+
+describe('mapa e widgets novos', () => {
+  it('mapa como card principal e tema do mapa', () => {
+    const s = parseSettings(JSON.stringify({ home: { main: 'mapa', side: ['curva', 'mensagens', 'miniplayer'] }, mapTheme: 'claro' }));
+    expect(s.home.main).toBe('mapa');
+    expect(s.home.side).toEqual(['curva', 'mensagens', 'miniplayer']);
+    expect(s.mapTheme).toBe('claro');
+  });
+
+  it('tema do mapa inválido volta ao escuro', () => {
+    expect(parseSettings(JSON.stringify({ mapTheme: 'neon' })).mapTheme).toBe('escuro');
+    expect(parseSettings(null).mapTheme).toBe('escuro');
+  });
+});

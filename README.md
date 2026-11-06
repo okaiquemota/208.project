@@ -8,10 +8,11 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 
 | Tela | O que tem |
 | --- | --- |
-| **Início** | Tela modular: um card principal (player **ou** velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
+| **Início** | Tela modular: um card principal (player, **mapa ao vivo do Waze** ou velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
 | **Música** | Player grande + duas abas: **Spotify** (suas playlists, curtidas e mixes, tocando sem sair do painel) e **Apps de música** (todos os apps de música do celular, achados sozinhos: YT Music, Deezer, Amazon Music, rádio, podcasts…, com o que cada um está tocando e a escolha de qual o painel acompanha). |
 | **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
-| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
+| **Mensagens** | Conversas novas do WhatsApp: lista à esquerda, conversa aberta à direita, com respostas rápidas de um toque. Abre pelo ícone do WhatsApp na barra lateral (com o número de conversas novas) ou pelo widget. |
+| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, cores do mapa, alerta de velocidade, player preferido e permissões. Tudo fica salvo no celular. |
 
 ```
 ┌──────┬──────────────────────────────────┬──────────────┐
@@ -43,6 +44,8 @@ Desenhados a partir dos widgets do CarPlay (iOS 26) e do Android Auto, e do pain
 | **Bússola** | Rosa dos ventos que gira com o carro, direção em graus e altitude. |
 | **Mini player** | A música atual em tamanho pequeno (quando o card principal é a velocidade). |
 | **Atalhos** | Quatro apps de acesso rápido. |
+| **Próxima curva** | Seta, distância e rua da próxima manobra do Waze ou do Maps, lidas da notificação do app de navegação. Tocar volta para a rota no app. |
+| **WhatsApp** | A última mensagem (foto, nome, horário) e quantas outras conversas têm mensagem nova. Tocar abre a tela Mensagens. |
 
 Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o espaço.
 
@@ -51,7 +54,31 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 - Funciona com **qualquer app de música**, não só o Spotify. O painel acompanha o que estiver tocando; nos Ajustes ou na tela Música dá para fixar um player.
 - No estilo do Spotify: capa desfocada no fundo, capa grande, título, artista, barra de progresso, play branco redondo e os botões extras do próprio app (no Spotify: curtir e aleatório/repetir).
 - Capa, título e progresso precisam do **Acesso a notificações** (veja abaixo). Sem ele, os botões continuam funcionando.
+- **Com o Spotify conectado** (veja abaixo), o player fala direto com o Spotify: capa em alta (720 px), **coração aceso** nas músicas curtidas (tocar curte/descurte), **aleatório** e **repetir** com o estado certo (verdes quando ligados). Funciona mesmo sem o Acesso a notificações. Se outro app estiver tocando, o player mostra esse outro app.
 - **Spotify por dentro**: na tela Música, aba **Spotify**, aparecem as mesmas listas que o Spotify mostra em carros (tocadas recentemente, curtidas, Daily Mix, playlists). Toque numa lista para abrir, numa música para tocar, ou em **Tocar** para tocar a lista inteira. Precisa de **Spotify Premium** e de ligar o Spotify uma vez (veja abaixo).
+
+### Mapa ao vivo do Waze
+
+Escolha **Mapa ao vivo (Waze)** como card principal nos Ajustes. É o mapa oficial do Waze (o mesmo "iFrame" que o Waze oferece para sites), com trânsito e alertas da comunidade, e por cima as informações no estilo do Waze no CarPlay:
+
+- **mapa noturno** cinza com ruas claras (nos Ajustes dá para usar as cores originais);
+- **segue o carro** pelo GPS do painel (o ponto azul). Depois de arrastar ou dar zoom com o dedo, ele espera 20 s para voltar a seguir;
+- **próxima curva** (seta, distância e rua) e, embaixo, **chegada, minutos e km** que faltam, quando há uma rota no Waze ou no Maps;
+- **velocidade** num círculo (fica vermelha acima do alerta);
+- **Casa** e **Trabalho**: começam a rota no Waze na hora (usam os endereços salvos no próprio Waze);
+- **botão do Waze**: abre o app de verdade.
+
+A linha azul da rota e a voz são do app do Waze. O Android não deixa colocar o app de outro dentro do painel (só o Android Auto e o CarPlay têm essa permissão). Para ver a rota, deixe o Waze numa metade da tela e o painel na outra (veja abaixo): com a tela já dividida, o botão do Waze, Casa e Trabalho abrem o Waze na outra metade.
+
+O mapa usa a internet do celular (dados móveis).
+
+### Mensagens do WhatsApp
+
+- As conversas com mensagem nova aparecem na tela **Mensagens** e no widget **WhatsApp**, com foto, nome e as últimas mensagens.
+- **Respostas rápidas** de um toque: "Dirigindo, já respondo 🚗", "Chego em 10 min", "Ok 👍" e "Te ligo depois". Elas usam o botão "Responder" da própria notificação do WhatsApp, então saem como uma resposta normal sua.
+- **Lida** marca a conversa como lida; **Abrir** abre a conversa no WhatsApp.
+- Nada é salvo: o painel só lê as notificações que estão na barra do celular. Quando a notificação some (você leu no celular), some do painel também.
+- Usa o mesmo **Acesso a notificações** do player.
 
 ### Outros recursos
 
@@ -63,7 +90,7 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 
 ### Ativar o "Tocando agora" (uma vez só)
 
-Para mostrar música, artista e capa, o Android exige que você libere o Painel 208 em **Acesso a notificações**:
+Para mostrar música, artista e capa, a próxima curva e as mensagens do WhatsApp, o Android exige que você libere o Painel 208 em **Acesso a notificações** (um acesso só para tudo isso):
 
 1. No card da música, toque em **Ativar**. Abre a tela certa do Android.
 2. Ligue a chave do **Painel 208** e confirme.
@@ -228,7 +255,8 @@ plugins/
   withCarLauncher.js      config plugin: <queries>, apps de música, tela inicial e paisagem
   carLauncherManifest.js  funções que mexem no AndroidManifest (testadas)
   withLocalMaven.js       config plugin: repositório Maven local (onde fica o SDK do Spotify)
-modules/media-keys/       módulo Expo local em Kotlin: música de qualquer app, volume, tela dividida, Spotify
+modules/media-keys/       módulo Expo local em Kotlin: música de qualquer app, volume, tela dividida,
+                          Spotify, próxima curva e WhatsApp (pelas notificações)
   android/maven/          SDK "App Remote" do Spotify (.aar oficial, licença Apache 2.0)
 src/
   config/                 tema (cores, fonte) e leitura da lista de atalhos
@@ -236,7 +264,7 @@ src/
   state/settings.tsx      ajustes salvos no celular, para todas as telas
   hooks/                  ligam o app ao sistema (GPS, bateria, música, clima…)
   components/             barra lateral, player, widgets, grade de apps
-  screens/                Início, Música, Ajustes e a "casca" (DashboardScreen)
+  screens/                Início, Música, Mensagens, Ajustes e a "casca" (DashboardScreen)
 __tests__/                testes (Jest)
 ```
 
@@ -254,6 +282,10 @@ __tests__/                testes (Jest)
 - **`carApps.ts`**: valida a lista de atalhos e escolhe os apps fixos da barra lateral.
 - **`settings.ts`**: os ajustes (widgets da tela de início, cor, alerta, player). Valida o que está salvo: um ajuste corrompido volta ao padrão em vez de derrubar o app. Escolher um widget que já está em outra posição troca os dois de lugar.
 - **`spotify.ts`**: confere as listas que vêm do Spotify e traduz os erros dele para mensagens em português que dizem o que fazer.
+- **`spotifyPlayer.ts`**: o estado do player do Spotify (música, curtida, aleatório, repetir), os botões dele e a regra de quando o card usa o Spotify direto ou a sessão de mídia do Android.
+- **`wazeMap.ts`**: o endereço do mapa do Waze, o script que roda dentro da página dele (troca o GPS do navegador pelo GPS do painel, aplica o mapa noturno e avisa quando o mapa é tocado), a regra de quando recentralizar (andou mais de 120 m e ninguém mexeu no mapa há 20 s) e os links oficiais de rota para Casa/Trabalho. O mapa noturno é uma tabela que troca cada tom de cinza do mapa claro por outro: nomes escuros viram claros, o fundo bege vira cinza-escuro e as ruas brancas ficam um cinza mais claro que o fundo.
+- **`navigation.ts`**: entende a notificação do app de navegação. Cada app escreve de um jeito ("300 m" no título e a rua no texto, ou "Vire à direita em 300 m"), então ela procura a distância em qualquer campo e usa o resto como instrução. Sem distância (ex.: "Waze em execução"), não é curva. Também separa a rua e tira chegada/minutos/km da linha de resumo.
+- **`messages.ts`**: valida as conversas do WhatsApp, o horário curto ("agora", "5 min", "ontem") e as respostas rápidas.
 - **`weather.ts`**: monta o pedido ao Open-Meteo e traduz o código do tempo para texto e ícone em português.
 - **`widgets.ts`**: barrinhas do sinal do GPS, LEDs do velocímetro e degraus do volume.
 - **`battery.ts`**: além do "carregando/descarregando" do Android, guarda o maior nível visto desde que plugou. Se cair 2 pontos ainda na tomada, avisa "USB fraca".
@@ -266,6 +298,7 @@ __tests__/                testes (Jest)
 3. **Controla o player.** Com acesso, manda tocar, pausar e pular direto para o player. Sem acesso, "aperta" as teclas de mídia, as mesmas de um fone Bluetooth. O volume muda sem o popup do sistema.
 4. **Abre apps ao lado.** Pede ao Android para abrir o app na outra metade da tela quando o painel está em tela dividida.
 5. **Spotify por dentro** (`SpotifyModule.kt`). Usa o SDK "App Remote" do Spotify, que fala direto com o app do Spotify do celular (o painel não guarda senha nem token). Ele entrega as listas "para carro" em forma de árvore: cada item pode ser aberto (tem filhos) ou tocado. O Kotlin guarda os itens e o JavaScript só passa o id; as capas viram arquivos JPEG no cache. O SDK não está no Maven Central, por isso o `.aar` fica dentro do módulo e o plugin `withLocalMaven` aponta o Gradle para essa pasta.
+6. **Próxima curva e WhatsApp** (`CarNotificationsModule.kt`). O mesmo serviço do "Acesso a notificações" recebe as notificações; o painel guarda na memória só as de navegação (Waze, Maps…) e as conversas do WhatsApp. A seta da manobra e a foto do contato viram PNG. Para responder, o painel aperta o botão "Responder" da própria notificação com o texto escolhido (é o mesmo recurso que relógios e o Android Auto usam).
 
 O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolve `null` e o resto do app continua funcionando.
 
@@ -286,6 +319,5 @@ O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolv
 ## Próximos passos (estrutura já pronta)
 
 - **Waze e música lado a lado com um toque**: um serviço de acessibilidade pode ligar a tela dividida sozinho. Precisa de mais uma liberação nas Configurações.
-- **Próxima curva do Waze/Maps no painel**: o mesmo "Acesso a notificações" permite ler a notificação de navegação e mostrar a próxima manobra num card.
 - **Uber/99 para motoristas**: atalho para o Uber Driver (`com.ubercab.driver`) e um card com a última notificação do app (chamada nova, mensagem). Aceitar corrida ou ver ganhos continua só no app deles.
 - **OBD2 (ELM327 Bluetooth)**: RPM, temperatura etc., como um card novo com o seu hook (`useObd`).

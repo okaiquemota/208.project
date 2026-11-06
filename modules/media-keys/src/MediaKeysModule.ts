@@ -29,6 +29,8 @@ declare class MediaKeysNativeModule extends NativeModule<MediaKeysEvents> {
 
   // Tela dividida.
   openAdjacent(packageName: string): boolean;
+  /** Abre um link no app indicado (ao lado, se estiver em tela dividida). */
+  openUrlAdjacent(url: string, packageName: string | null): boolean;
   isInMultiWindow(): boolean;
 }
 

@@ -22,11 +22,16 @@ import {
   tintFromArtwork,
 } from '../lib/nowPlaying';
 import {
+  HeartFilledIcon,
+  HeartIcon,
   MusicIcon,
   NextIcon,
   PauseIcon,
   PlayIcon,
   PreviousIcon,
+  RepeatIcon,
+  RepeatOneIcon,
+  ShuffleIcon,
   VolumeDownIcon,
   VolumeUpIcon,
 } from './icons';
@@ -44,6 +49,15 @@ type Props = {
 };
 
 const PAD = 20;
+/** Verde do Spotify: botão ligado (coração aceso, aleatório ligado…). */
+const ACTIVE_GREEN = '#1ED760';
+const GLYPHS = {
+  heart: HeartIcon,
+  'heart-filled': HeartFilledIcon,
+  shuffle: ShuffleIcon,
+  repeat: RepeatIcon,
+  'repeat-one': RepeatOneIcon,
+} as const;
 /** Altura do bloco de baixo: progresso + botões. */
 const BOTTOM_BLOCK = 118;
 
@@ -254,9 +268,16 @@ function SideButton({
 /** Botão extra do player (ícone do próprio app) ou um espaço vazio do mesmo tamanho. */
 function ActionButton({ action, onPress }: { action: PlayerAction | null; onPress: (a: string) => void }) {
   if (!action) return <View style={styles.sideButton} />;
+  const Glyph = action.glyph ? GLYPHS[action.glyph] : null;
   return (
     <Touch onPress={() => onPress(action.action)} accessibilityLabel={action.name} style={styles.sideButton}>
-      {action.iconUri ? (
+      {Glyph ? (
+        <>
+          <Glyph size={28} color={action.active ? ACTIVE_GREEN : colors.text} />
+          {/* Pontinho embaixo quando ligado, como no Spotify */}
+          {action.active && action.glyph !== 'heart-filled' ? <View style={styles.activeDot} /> : null}
+        </>
+      ) : action.iconUri ? (
         <Image source={action.iconUri} style={styles.extraIcon} contentFit="contain" transition={0} />
       ) : (
         <Text style={[font(11, '700', colors.text2), styles.extraText]} numberOfLines={2} allowFontScaling={false}>
@@ -381,6 +402,14 @@ const styles = StyleSheet.create({
     borderRadius: sizes.minTouch / 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  activeDot: {
+    position: 'absolute',
+    bottom: 8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: ACTIVE_GREEN,
   },
   extraIcon: {
     width: 28,

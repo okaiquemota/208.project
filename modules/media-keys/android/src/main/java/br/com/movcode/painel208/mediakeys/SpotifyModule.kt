@@ -7,15 +7,20 @@ import android.os.Looper
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import com.spotify.protocol.client.CallResult
+import com.spotify.protocol.client.Subscription
+import com.spotify.protocol.types.Empty
 import com.spotify.protocol.types.Image
 import com.spotify.protocol.types.ImageUri
 import com.spotify.protocol.types.ListItem
 import com.spotify.protocol.types.ListItems
+import com.spotify.protocol.types.PlayerState
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
 
 private const val PAGE_SIZE = 50
 
@@ -37,8 +42,29 @@ class SpotifyModule : Module() {
   private val itemsById = HashMap<String, ListItem>()
   private val imageCache = HashMap<String, String>()
 
+  // ---- Player (o que está tocando no Spotify) ----
+  // Tudo abaixo é mexido só na thread principal (os avisos do SDK chegam nela).
+  private var playerSub: Subscription<PlayerState>? = null
+  private var state: PlayerState? = null
+  private var stateAt = 0L
+  private var trackUri: String? = null
+  /** Música atual está nas Curtidas (null = ainda não sabemos). */
+  private var liked: Boolean? = null
+  private var canLike = true
+  /** Capa grande da música atual: identificador → (arquivo, cor média). */
+  private var artRaw: String? = null
+  private var art: Pair<String, String>? = null
+  private var artLoading: String? = null
+  /** Último estado montado (lido pelo JavaScript ao abrir). */
+  @Volatile private var lastPlayer: Map<String, Any?>? = null
+  /** Salvar capas fora da thread principal. */
+  private val io = Executors.newSingleThreadExecutor()
+
   override fun definition() = ModuleDefinition {
     Name("SpotifyRemote")
+
+    /** A música do Spotify mudou (ou pausou, curtiu, aleatório…). */
+    Events("onPlayerState")
 
     Function("isInstalled") {
       context?.let { SpotifyAppRemote.isSpotifyInstalled(it) } ?: false
@@ -52,7 +78,9 @@ class SpotifyModule : Module() {
         promise.reject("ERR_SEM_CONTEXTO", "App não está pronto", null)
         return@AsyncFunction
       }
-      if (remote?.isConnected == true) {
+      remote?.takeIf { it.isConnected }?.let { r ->
+        // Já conectado (ex.: o JavaScript recarregou): garante o player ligado.
+        mainHandler.post { if (playerSub == null) startPlayer(r) else emitPlayer() }
         promise.resolve(true)
         return@AsyncFunction
       }
@@ -64,6 +92,7 @@ class SpotifyModule : Module() {
         SpotifyAppRemote.connect(ctx, params, object : Connector.ConnectionListener {
           override fun onConnected(appRemote: SpotifyAppRemote) {
             remote = appRemote
+            startPlayer(appRemote)
             promise.resolve(true)
           }
 
@@ -77,9 +106,21 @@ class SpotifyModule : Module() {
     }
 
     AsyncFunction("disconnect") {
+      mainHandler.post { stopPlayer(false) }
       remote?.let { SpotifyAppRemote.disconnect(it) }
       remote = null
       true
+    }
+
+    /** O que está tocando no Spotify agora (null se nada ou desconectado). */
+    Function("getPlayerState") { lastPlayer }
+
+    /**
+     * Comandos do player: toggle (tocar/pausar), next, previous, shuffle,
+     * repeat, like (curtir) e unlike (descurtir).
+     */
+    AsyncFunction("playerCommand") { command: String, promise: Promise ->
+      mainHandler.post { runCommand(command, promise) }
     }
 
     /** Listas iniciais (as mesmas que o Spotify mostra em carros). */
@@ -138,9 +179,163 @@ class SpotifyModule : Module() {
     }
 
     OnDestroy {
+      playerSub?.cancel()
+      playerSub = null
       remote?.let { SpotifyAppRemote.disconnect(it) }
       remote = null
+      io.shutdown()
     }
+  }
+
+  // ---------- Player ----------
+
+  /** Passa a receber cada mudança do player do Spotify. */
+  private fun startPlayer(r: SpotifyAppRemote) {
+    playerSub?.cancel()
+    playerSub = r.playerApi.subscribeToPlayerState()
+      .setEventCallback { s -> onPlayerState(s) }
+    // Se a conexão cair (Spotify fechado, por exemplo), avisamos o JavaScript.
+    playerSub?.setErrorCallback { stopPlayer(remote?.isConnected == true) }
+  }
+
+  private fun stopPlayer(connected: Boolean) {
+    playerSub?.cancel()
+    playerSub = null
+    state = null
+    trackUri = null
+    liked = null
+    lastPlayer = null
+    if (!connected) remote = null
+    sendEvent("onPlayerState", mapOf("connected" to connected, "state" to null))
+  }
+
+  private fun onPlayerState(s: PlayerState) {
+    state = s
+    stateAt = System.currentTimeMillis()
+    val track = s.track
+    if (track?.uri != trackUri) {
+      trackUri = track?.uri
+      liked = null
+      canLike = true
+      track?.uri?.let { loadLibraryState(it) }
+    }
+    val raw = track?.imageUri?.raw
+    if (raw != null && raw != artRaw && raw != artLoading) loadArtwork(raw)
+    emitPlayer()
+  }
+
+  private fun emitPlayer() {
+    lastPlayer = playerMap()
+    sendEvent("onPlayerState", mapOf("connected" to true, "state" to lastPlayer))
+  }
+
+  private fun playerMap(): Map<String, Any?>? {
+    val s = state ?: return null
+    val t = s.track ?: return null
+    val artists = t.artists?.mapNotNull { it?.name }?.filter { it.isNotBlank() }.orEmpty()
+    val raw = t.imageUri?.raw
+    val cover = if (raw != null && raw == artRaw) art else null
+    val rules = s.playbackRestrictions
+    return mapOf(
+      "uri" to t.uri,
+      "title" to (t.name ?: ""),
+      "artist" to (if (artists.isNotEmpty()) artists.joinToString(", ") else t.artist?.name ?: ""),
+      "album" to (t.album?.name ?: ""),
+      "durationMs" to t.duration.toDouble(),
+      "positionMs" to s.playbackPosition.toDouble(),
+      "capturedAt" to stateAt.toDouble(),
+      "playbackSpeed" to s.playbackSpeed.toDouble(),
+      "isPaused" to s.isPaused,
+      "shuffle" to (s.playbackOptions?.isShuffling ?: false),
+      "repeat" to (s.playbackOptions?.repeatMode ?: 0),
+      "canSkipNext" to (rules?.canSkipNext ?: true),
+      "canSkipPrev" to (rules?.canSkipPrev ?: true),
+      "canToggleShuffle" to (rules?.canToggleShuffle ?: true),
+      "canRepeat" to ((rules?.canRepeatContext ?: true) || (rules?.canRepeatTrack ?: true)),
+      "isEpisode" to t.isEpisode,
+      "liked" to liked,
+      "canLike" to canLike,
+      "artworkUri" to cover?.first,
+      "artworkColor" to cover?.second,
+    )
+  }
+
+  /** Confere se a música está nas Curtidas (para acender o coração). */
+  private fun loadLibraryState(uri: String) {
+    val r = remote ?: return
+    r.userApi.getLibraryState(uri)
+      .setResultCallback { st ->
+        if (uri == trackUri) {
+          liked = st.isAdded
+          canLike = st.canAdd
+          emitPlayer()
+        }
+      }
+      .setErrorCallback { /* sem coração aceso; não atrapalha o resto */ }
+  }
+
+  /** Capa grande (720 px) da música, salva em arquivo, com a cor média. */
+  private fun loadArtwork(raw: String) {
+    val r = remote ?: return
+    val ctx = context ?: return
+    artLoading = raw
+    r.imagesApi.getImage(ImageUri(raw), Image.Dimension.LARGE)
+      .setResultCallback { bmp ->
+        io.execute {
+          val result = try {
+            val dir = File(ctx.cacheDir, "spotify-player").apply { mkdirs() }
+            dir.listFiles()?.forEach { it.delete() }
+            val file = File(dir, "capa_${Integer.toHexString(raw.hashCode())}.jpg")
+            FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            val pixel = Bitmap.createScaledBitmap(bmp, 1, 1, true).getPixel(0, 0)
+            "file://${file.absolutePath}" to String.format("#%06X", 0xFFFFFF and pixel)
+          } catch (e: Exception) {
+            null
+          }
+          mainHandler.post {
+            if (artLoading == raw) artLoading = null
+            if (result != null) {
+              artRaw = raw
+              art = result
+              if (state?.track?.imageUri?.raw == raw) emitPlayer()
+            }
+          }
+        }
+      }
+      .setErrorCallback { mainHandler.post { if (artLoading == raw) artLoading = null } }
+  }
+
+  private fun runCommand(command: String, promise: Promise) {
+    val r = connected(promise) ?: return
+    val uri = trackUri
+    val call: CallResult<Empty>? = when (command) {
+      "toggle" -> if (state?.isPaused != false) r.playerApi.resume() else r.playerApi.pause()
+      "next" -> r.playerApi.skipNext()
+      "previous" -> r.playerApi.skipPrevious()
+      "shuffle" -> r.playerApi.toggleShuffle()
+      "repeat" -> r.playerApi.toggleRepeat()
+      "like" -> uri?.let { r.userApi.addToLibrary(it) }
+      "unlike" -> uri?.let { r.userApi.removeFromLibrary(it) }
+      else -> null
+    }
+    if (call == null) {
+      promise.reject("ERR_COMANDO", "Comando indisponível: $command", null)
+      return
+    }
+    // Curtir: acende/apaga o coração na hora; a conferência vem depois.
+    if ((command == "like" || command == "unlike") && uri != null) {
+      liked = command == "like"
+      emitPlayer()
+    }
+    call
+      .setResultCallback {
+        if ((command == "like" || command == "unlike") && uri != null) loadLibraryState(uri)
+        promise.resolve(true)
+      }
+      .setErrorCallback { e ->
+        if ((command == "like" || command == "unlike") && uri != null) loadLibraryState(uri)
+        promise.reject("ERR_SPOTIFY", e.message ?: "Erro do Spotify", e)
+      }
   }
 
   private val context: Context?

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Painel 208",
     "slug": "painel-208",
-    "version": "2.3.0",
+    "version": "2.4.0",
     "platforms": ["android"],
     "orientation": "landscape",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
     "backgroundColor": "#000000",
     "android": {
       "package": "br.com.movcode.painel208",
-      "versionCode": 8,
+      "versionCode": 9,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",

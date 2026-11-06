@@ -34,6 +34,9 @@ export type NowPlayingInfo = {
   customActions: PlayerAction[];
 };
 
+/** Ícones desenhados pelo próprio painel (para os botões do Spotify). */
+export type PlayerGlyph = 'heart' | 'heart-filled' | 'shuffle' | 'repeat' | 'repeat-one';
+
 /** Botão extra oferecido pelo próprio player. */
 export type PlayerAction = {
   /** Código interno da ação (mandado de volta em sendCustomAction). */
@@ -42,6 +45,10 @@ export type PlayerAction = {
   name: string;
   /** Ícone do próprio player, em PNG ("file://…"), ou null. */
   iconUri: string | null;
+  /** Ícone desenhado pelo painel (usado no lugar de iconUri). */
+  glyph?: PlayerGlyph;
+  /** Ligado (coração aceso, aleatório ligado…): fica verde. */
+  active?: boolean;
 };
 
 /** App de música instalado (achado pelo serviço de mídia, como no Android Auto). */

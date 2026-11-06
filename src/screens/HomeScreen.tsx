@@ -1,8 +1,9 @@
-// Tela de início modular: um card principal (player ou velocidade) e uma
-// coluna com até 3 widgets, tudo escolhido nos Ajustes.
+// Tela de início modular: um card principal (player, mapa do Waze ou
+// velocidade) e uma coluna com até 3 widgets, tudo escolhido nos Ajustes.
 
 import { StyleSheet, View } from 'react-native';
 
+import { MessagesWidget, NextTurnWidget } from '../components/CarNotificationWidgets';
 import { SpeedWidget, TripWidget, VolumeWidget } from '../components/InstrumentCards';
 import {
   BatteryWidget,
@@ -14,8 +15,11 @@ import {
   WeatherWidget,
 } from '../components/MoreWidgets';
 import { NowPlayingCard } from '../components/NowPlayingCard';
+import type { WazeActions } from '../components/MapHud';
+import { WazeMap } from '../components/WazeMap';
 import { sizes } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
+import type { CarNotificationsState } from '../hooks/useCarNotifications';
 import type { GpsState } from '../hooks/useGps';
 import type { InstalledApp } from '../hooks/useInstalledApps';
 import type { MediaState } from '../hooks/useMedia';
@@ -35,6 +39,15 @@ export type HomeProps = {
   /** Apps para o widget de atalhos. */
   shortcutApps: InstalledApp[];
   onOpenApp: (pkg: string) => void;
+  /** Próxima curva e conversas (das notificações). */
+  notifications: Pick<CarNotificationsState, 'navigation' | 'chats' | 'open'>;
+  /** "Acesso a notificações" liberado (o de verdade, não o do Spotify). */
+  notificationAccess: boolean;
+  onOpenAccess: () => void;
+  onOpenMessages: () => void;
+  /** Botões do Waze de verdade no mapa (null se não estiver instalado). */
+  waze: WazeActions | null;
+  whatsappIcon: string | null;
   compact: boolean;
 };
 
@@ -45,6 +58,20 @@ export function HomeScreen(props: HomeProps) {
   const mainCard =
     main === 'velocidade' ? (
       <SpeedWidget gps={props.gps} large />
+    ) : main === 'mapa' ? (
+      <WazeMap
+        gps={props.gps}
+        theme={settings.mapTheme}
+        hud={{
+          nav: props.notifications.navigation,
+          onOpenNav: props.notifications.open,
+          speedKmh: props.gps.status === 'ok' ? props.gps.trip.speedKmh : null,
+          speedAlertKmh: settings.speedAlertKmh,
+          waze: props.waze,
+          now: props.now.getTime(),
+          compact: props.compact,
+        }}
+      />
     ) : (
       <NowPlayingCard
         media={props.media}
@@ -97,6 +124,26 @@ function renderSideWidget(id: SideWidgetId, p: HomeProps) {
       return <MiniPlayerWidget media={p.media} playerIcon={p.playerIcon} onOpenMusic={p.onOpenMusic} />;
     case 'atalhos':
       return <ShortcutsWidget apps={p.shortcutApps} onOpen={p.onOpenApp} />;
+    case 'curva':
+      return (
+        <NextTurnWidget
+          nav={p.notifications.navigation}
+          hasAccess={p.notificationAccess}
+          onOpenAccess={p.onOpenAccess}
+          onOpen={p.notifications.open}
+        />
+      );
+    case 'mensagens':
+      return (
+        <MessagesWidget
+          chats={p.notifications.chats}
+          hasAccess={p.notificationAccess}
+          icon={p.whatsappIcon}
+          now={p.now.getTime()}
+          onOpenAccess={p.onOpenAccess}
+          onOpenMessages={p.onOpenMessages}
+        />
+      );
   }
 }
 

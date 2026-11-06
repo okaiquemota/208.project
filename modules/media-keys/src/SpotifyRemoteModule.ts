@@ -1,7 +1,15 @@
 import { NativeModule, requireOptionalNativeModule } from 'expo';
 
+/** Comandos do player do Spotify. */
+export type SpotifyCommand = 'toggle' | 'next' | 'previous' | 'shuffle' | 'repeat' | 'like' | 'unlike';
+
+export type SpotifyRemoteEvents = {
+  /** Música mudou, pausou, curtiu…; state = null quando nada toca ou caiu a conexão. */
+  onPlayerState: (event: { connected: boolean; state: unknown }) => void;
+};
+
 /** Funções do lado Kotlin (SpotifyModule.kt), pelo SDK oficial App Remote. */
-declare class SpotifyRemoteNativeModule extends NativeModule<{}> {
+declare class SpotifyRemoteNativeModule extends NativeModule<SpotifyRemoteEvents> {
   isInstalled(): boolean;
   isConnected(): boolean;
   connect(clientId: string, redirectUri: string): Promise<boolean>;
@@ -11,6 +19,9 @@ declare class SpotifyRemoteNativeModule extends NativeModule<{}> {
   getChildren(id: string, offset: number): Promise<unknown>;
   play(id: string): Promise<boolean>;
   getImage(raw: string): Promise<string | null>;
+  /** O que está tocando agora (dados crus; valide com parseSpotifyPlayer). */
+  getPlayerState(): unknown;
+  playerCommand(command: SpotifyCommand): Promise<boolean>;
 }
 
 /** O módulo, ou null se o código nativo não estiver no build. */

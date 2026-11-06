@@ -127,6 +127,24 @@ export function SettingsScreen({ gps, media, library, onDone }: Props) {
           </Chips>
         </Section>
 
+        <Section title="Mapa do Waze">
+          <Chips>
+            <Chip
+              label="Escuro (noturno)"
+              selected={settings.mapTheme === 'escuro'}
+              onPress={() => update((s) => ({ ...s, mapTheme: 'escuro' }))}
+            />
+            <Chip
+              label="Claro (original)"
+              selected={settings.mapTheme === 'claro'}
+              onPress={() => update((s) => ({ ...s, mapTheme: 'claro' }))}
+            />
+          </Chips>
+          <Text style={[font(12, '600', colors.text3), styles.hint]}>
+            Escolha “Mapa ao vivo (Waze)” no card principal. O mapa usa a internet do celular.
+          </Text>
+        </Section>
+
         <Section title="Alerta de velocidade">
           <Label>A velocidade fica vermelha acima de:</Label>
           <Chips>

@@ -3,6 +3,7 @@ package br.com.movcode.painel208.mediakeys
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -114,6 +115,8 @@ class MediaKeysModule : Module() {
 
     // Tela dividida
     Function("openAdjacent") { packageName: String -> openAdjacent(packageName) }
+    /** Abre um link (ex.: rota do Waze) no app indicado, ao lado se estiver em tela dividida. */
+    Function("openUrlAdjacent") { url: String, packageName: String? -> openUrlAdjacent(url, packageName) }
     Function("isInMultiWindow") { appContext.currentActivity?.isInMultiWindowMode ?: false }
 
     OnStartObserving(NOW_PLAYING_EVENT) {
@@ -502,6 +505,20 @@ class MediaKeysModule : Module() {
    * Abre outro app "ao lado". Se o Painel 208 já estiver em tela dividida, o
    * app abre na outra metade. Se não estiver, o Android abre em tela cheia.
    */
+  private fun openUrlAdjacent(url: String, packageName: String?): Boolean {
+    val activity = appContext.currentActivity ?: return false
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+      if (packageName != null) setPackage(packageName)
+      addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    return try {
+      activity.startActivity(intent)
+      true
+    } catch (e: Exception) {
+      false
+    }
+  }
+
   private fun openAdjacent(packageName: String): Boolean {
     val activity = appContext.currentActivity ?: return false
     val intent = activity.packageManager.getLaunchIntentForPackage(packageName) ?: return false

@@ -10,3 +10,6 @@ export const SPOTIFY_REDIRECT_URI = 'painel208://spotify-callback';
 
 /** Tipo de conteúdo pedido ao Spotify: as listas que ele monta para carros. */
 export const SPOTIFY_CONTENT_TYPE = 'automotive';
+
+/** Pacote do app do Spotify no Android. */
+export const SPOTIFY_PACKAGE = 'com.spotify.music';

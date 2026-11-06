@@ -1,12 +1,14 @@
 // Spotify por dentro do painel: conectar, navegar pelas listas que o Spotify
 // monta para carro (tocados recentemente, feito para você, playlists…),
-// abrir pastas, voltar e tocar. Usa o módulo nativo SpotifyRemote.
+// abrir pastas, voltar e tocar. Também acompanha o player do Spotify (música,
+// capa grande, curtida, aleatório, repetir). Usa o módulo nativo SpotifyRemote.
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { SpotifyRemote } from '../../modules/media-keys';
+import { type SpotifyCommand, SpotifyRemote } from '../../modules/media-keys';
 import { SPOTIFY_CLIENT_ID, SPOTIFY_CONTENT_TYPE, SPOTIFY_REDIRECT_URI } from '../config/spotify';
 import { parseSpotifyPage, type SpotifyItem, spotifyErrorMessage } from '../lib/spotify';
+import { parseSpotifyPlayer, type SpotifyPlayerState } from '../lib/spotifyPlayer';
 import { readText, writeText } from '../lib/storage';
 
 /** Lembra que o usuário já conectou uma vez (aí reconecta sozinho). */
@@ -33,6 +35,14 @@ export type SpotifyLevel = {
 const errorCode = (e: unknown) =>
   typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : null;
 
+function readPlayer(): SpotifyPlayerState | null {
+  try {
+    return parseSpotifyPlayer(SpotifyRemote?.getPlayerState());
+  } catch {
+    return null;
+  }
+}
+
 function initialStatus(): SpotifyStatus {
   if (!SpotifyRemote) return 'indisponivel';
   try {
@@ -49,6 +59,17 @@ export function useSpotify() {
   const [stack, setStack] = useState<SpotifyLevel[]>([]);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<Record<string, string | null>>({});
+  const [player, setPlayer] = useState<SpotifyPlayerState | null>(readPlayer);
+
+  // Player do Spotify: cada mudança chega por evento do Kotlin.
+  useEffect(() => {
+    if (!SpotifyRemote) return;
+    const sub = SpotifyRemote.addListener('onPlayerState', (event) => {
+      setPlayer(parseSpotifyPlayer(event?.state));
+      if (event && event.connected === false) setStatus('desconectado');
+    });
+    return () => sub.remove();
+  }, []);
 
   const fail = useCallback((e: unknown) => {
     const code = errorCode(e);
@@ -135,6 +156,17 @@ export function useSpotify() {
 
   const back = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), []);
 
+  /** Comando no player do Spotify (tocar/pausar, pular, curtir, aleatório…). */
+  const command = useCallback(
+    (cmd: SpotifyCommand) => {
+      if (!SpotifyRemote) return;
+      // Resposta imediata no botão de tocar; o Spotify confirma em seguida.
+      if (cmd === 'toggle') setPlayer((p) => (p ? { ...p, isPaused: !p.isPaused } : p));
+      SpotifyRemote.playerCommand(cmd).catch(fail);
+    },
+    [fail],
+  );
+
   // Capas dos itens da tela atual que ainda não foram carregadas.
   const current = stack[stack.length - 1] ?? null;
   const missing = (current?.items ?? [])
@@ -161,7 +193,21 @@ export function useSpotify() {
     };
   }, [missing]);
 
-  return { status, error, current, depth: stack.length, loading, images, connect, open, play, back };
+  return {
+    status,
+    error,
+    current,
+    depth: stack.length,
+    loading,
+    images,
+    /** Música do Spotify agora (null se desconectado ou nada carregado). */
+    player: status === 'conectado' ? player : null,
+    connect,
+    open,
+    play,
+    back,
+    command,
+  };
 }
 
 export type SpotifyState = ReturnType<typeof useSpotify>;
