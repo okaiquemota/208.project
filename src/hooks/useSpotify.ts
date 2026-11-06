@@ -35,6 +35,10 @@ export type SpotifyLevel = {
 const errorCode = (e: unknown) =>
   typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : null;
 
+/** Texto original do erro do Spotify (ajuda a descobrir o que falta no cadastro). */
+const errorText = (e: unknown) =>
+  typeof e === 'object' && e !== null && 'message' in e ? String((e as { message: unknown }).message).slice(0, 200) : null;
+
 function readPlayer(): SpotifyPlayerState | null {
   try {
     return parseSpotifyPlayer(SpotifyRemote?.getPlayerState());
@@ -56,6 +60,7 @@ function initialStatus(): SpotifyStatus {
 export function useSpotify() {
   const [status, setStatus] = useState<SpotifyStatus>(initialStatus);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [stack, setStack] = useState<SpotifyLevel[]>([]);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<Record<string, string | null>>({});
@@ -74,6 +79,7 @@ export function useSpotify() {
   const fail = useCallback((e: unknown) => {
     const code = errorCode(e);
     setError(spotifyErrorMessage(code));
+    setErrorDetail([code, errorText(e)].filter(Boolean).join(': ') || null);
     setStatus(code === 'ERR_DESCONECTADO' ? 'desconectado' : 'erro');
   }, []);
 
@@ -94,6 +100,7 @@ export function useSpotify() {
     if (!SpotifyRemote) return;
     setStatus('conectando');
     setError(null);
+    setErrorDetail(null);
     try {
       await SpotifyRemote.connect(SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI);
       writeText(LINKED_KEY, '1');
@@ -196,6 +203,8 @@ export function useSpotify() {
   return {
     status,
     error,
+    /** Código e texto original do erro (em letra pequena, para diagnóstico). */
+    errorDetail,
     current,
     depth: stack.length,
     loading,

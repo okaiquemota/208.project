@@ -20,7 +20,7 @@ type Props = {
 };
 
 export function SpotifyBrowser({ spotify, icon }: Props) {
-  const { status, error, current, depth, loading, images } = spotify;
+  const { status, error, errorDetail, current, depth, loading, images } = spotify;
 
   if (status !== 'conectado' || !current) {
     const text =
@@ -36,6 +36,11 @@ export function SpotifyBrowser({ spotify, icon }: Props) {
       <View style={styles.center}>
         {icon ? <Image source={icon} style={styles.bigIcon} contentFit="contain" /> : <MusicIcon size={48} color={colors.text2} />}
         <Text style={[font(15, '600', status === 'erro' ? colors.orange : colors.text2), styles.centerText]}>{text}</Text>
+        {status === 'erro' && errorDetail ? (
+          <Text style={[font(11, '500', colors.text3), styles.centerText]} numberOfLines={3} selectable>
+            {errorDetail}
+          </Text>
+        ) : null}
         {status === 'conectando' && <ActivityIndicator color={colors.text} />}
         {canConnect && (
           <Touch onPress={() => void spotify.connect()} accessibilityLabel="Conectar ao Spotify" style={styles.connect}>
