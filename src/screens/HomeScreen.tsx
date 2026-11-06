@@ -6,9 +6,9 @@ import { StyleSheet, View } from 'react-native';
 import { SpeedWidget, TripWidget, VolumeWidget } from '../components/InstrumentCards';
 import {
   BatteryWidget,
+  CalendarWidget,
   ClockWidget,
   CompassWidget,
-  EmptyWidget,
   MiniPlayerWidget,
   ShortcutsWidget,
   WeatherWidget,
@@ -55,19 +55,18 @@ export function HomeScreen(props: HomeProps) {
       />
     );
 
+  // Posições vazias somem: os outros widgets crescem para ocupar o espaço.
+  const widgets = side.filter((w): w is SideWidgetId => w !== null);
+
   // Tela dividida (Waze ao lado) ou coluna toda vazia: só o card principal.
-  const hasSide = side.some((w) => w !== null);
-  if (props.compact || !hasSide) return <View style={styles.full}>{mainCard}</View>;
+  if (props.compact || widgets.length === 0) return <View style={styles.full}>{mainCard}</View>;
 
   return (
     <>
       <View style={styles.main}>{mainCard}</View>
       <View style={styles.side}>
-        {side.map((id, i) => (
-          <View
-            key={`${i}-${id ?? 'vazio'}`}
-            style={id && COMPACT_WIDGETS.includes(id) ? styles.slotCompact : styles.slot}
-          >
+        {widgets.map((id) => (
+          <View key={id} style={COMPACT_WIDGETS.includes(id) ? styles.slotCompact : styles.slot}>
             {renderSideWidget(id, props)}
           </View>
         ))}
@@ -76,7 +75,7 @@ export function HomeScreen(props: HomeProps) {
   );
 }
 
-function renderSideWidget(id: SideWidgetId | null, p: HomeProps) {
+function renderSideWidget(id: SideWidgetId, p: HomeProps) {
   switch (id) {
     case 'velocidade':
       return <SpeedWidget gps={p.gps} />;
@@ -85,7 +84,9 @@ function renderSideWidget(id: SideWidgetId | null, p: HomeProps) {
     case 'volume':
       return <VolumeWidget media={p.media} />;
     case 'relogio':
-      return <ClockWidget now={p.now} />;
+      return <ClockWidget />;
+    case 'calendario':
+      return <CalendarWidget now={p.now} />;
     case 'bateria':
       return <BatteryWidget battery={p.battery} />;
     case 'clima':
@@ -96,8 +97,6 @@ function renderSideWidget(id: SideWidgetId | null, p: HomeProps) {
       return <MiniPlayerWidget media={p.media} playerIcon={p.playerIcon} onOpenMusic={p.onOpenMusic} />;
     case 'atalhos':
       return <ShortcutsWidget apps={p.shortcutApps} onOpen={p.onOpenApp} />;
-    default:
-      return <EmptyWidget />;
   }
 }
 

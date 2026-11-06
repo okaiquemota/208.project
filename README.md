@@ -29,17 +29,22 @@ Em **tela dividida com o Waze** (largura menor que 700 dp), fica só a barra lat
 
 ### Widgets da tela de início
 
+Desenhados a partir dos widgets do CarPlay (iOS 26) e do Android Auto, e do painel analógico do próprio 208. Fundo liso, sem títulos e desenhos reconhecíveis. Cor só nos detalhes.
+
 | Widget | O que mostra |
 | --- | --- |
-| **Velocidade** | Número grande, barra de "LEDs" (fica vermelha acima do limite escolhido), bússola e sinal do GPS. Também pode ser o card principal, em tamanho grande. |
-| **Viagem** | Distância, tempo em movimento, média e máxima. Segure 0,8 s para zerar. |
-| **Volume** | Volume da música com barra em degraus. |
-| **Relógio** | Hora grande, dia da semana e data. |
-| **Bateria** | Porcentagem, barra e aviso de "USB fraca" (a carga caindo mesmo na tomada). |
-| **Clima** | Temperatura, tempo e mín/máx do dia onde você está ([Open-Meteo](https://open-meteo.com), gratuito, sem cadastro). Atualiza a cada 20 min ou a cada ~10 km. Precisa de internet. |
-| **Bússola** | Direção em graus e ponto cardeal, e a altitude. |
+| **Velocidade** | Mostrador com marcações a cada 5 km/h que acendem até a velocidade atual. Depois do limite escolhido elas são vermelhas. Mostra também a direção (NE 52°) e o sinal do GPS em barrinhas. Como card principal, vira um velocímetro grande com a escala de 0 a 200. |
+| **Viagem** | Distância em destaque e, embaixo, tempo em movimento, média e máxima. Segure 0,8 s para zerar. |
+| **Volume** | Volume da música em degraus. |
+| **Relógio** | Relógio de ponteiros (o dos segundos na cor de destaque), hora digital e data. |
+| **Calendário** | Dia de hoje em destaque e o mês inteiro, com hoje marcado. |
+| **Bateria** | Anel de carga (verde carregando, laranja com USB fraca), porcentagem e situação. |
+| **Clima** | Cidade, temperatura grande, tempo e máx./mín. do dia ([Open-Meteo](https://open-meteo.com), gratuito, sem cadastro). Atualiza a cada 20 min ou a cada ~10 km. Precisa de internet. |
+| **Bússola** | Rosa dos ventos que gira com o carro, direção em graus e altitude. |
 | **Mini player** | A música atual em tamanho pequeno (quando o card principal é a velocidade). |
 | **Atalhos** | Quatro apps de acesso rápido. |
+
+Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o espaço.
 
 ### Player de música
 

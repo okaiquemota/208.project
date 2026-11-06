@@ -44,3 +44,21 @@ export function volumeSegments(current: number, max: number, count: number): boo
   const lit = Math.round(ratio * count);
   return Array.from({ length: count }, (_, i) => i < lit);
 }
+
+/**
+ * Mostrador do velocímetro com `count` marcações de 0 a `maxKmh`.
+ * Devolve quantas acendem (até a velocidade atual) e a partir de qual
+ * marcação a cor é de alerta (as que passam do limite).
+ */
+export function dialTicks(
+  speedKmh: number | null,
+  maxKmh: number,
+  alertKmh: number,
+  count: number,
+): { lit: number; alertFrom: number } {
+  const stepKmh = maxKmh / (count - 1);
+  const v = speedKmh !== null && Number.isFinite(speedKmh) ? Math.max(0, speedKmh) : 0;
+  const lit = v < 0.5 ? 0 : Math.min(count, Math.round(v / stepKmh) + 1);
+  const alertFrom = Number.isFinite(alertKmh) ? Math.floor(alertKmh / stepKmh + 1e-9) + 1 : Number.POSITIVE_INFINITY;
+  return { lit, alertFrom };
+}

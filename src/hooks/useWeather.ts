@@ -1,6 +1,7 @@
 // Clima onde o carro está (Open-Meteo). Só roda quando o widget de clima
 // está na tela, e busca de novo a cada 20 min ou quando o carro anda ~10 km.
 
+import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 
 import { needsWeatherRefresh, parseWeather, type Weather, weatherUrl } from '../lib/weather';
@@ -11,6 +12,8 @@ const CHECK_MS = 60_000;
 
 export type WeatherState = {
   weather: Weather | null;
+  /** Cidade (ou bairro) onde o carro está, se o Android souber dizer. */
+  place: string | null;
   /** A última busca falhou (sem internet?). */
   failed: boolean;
 };
@@ -18,6 +21,7 @@ export type WeatherState = {
 export function useWeather(position: GpsPosition | null): WeatherState {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [failed, setFailed] = useState(false);
+  const [place, setPlace] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const last = useRef<Weather | null>(null);
   const busy = useRef(false);
@@ -50,6 +54,14 @@ export function useWeather(position: GpsPosition | null): WeatherState {
           setWeather(w);
           setFailed(false);
         }
+        // Nome da cidade (só a cada atualização do clima, não a cada segundo).
+        return Location.reverseGeocodeAsync({ latitude: lat, longitude: lon })
+          .then((list) => {
+            const a = list[0];
+            const name = a?.city ?? a?.subregion ?? a?.district ?? null;
+            if (mounted.current) setPlace(name);
+          })
+          .catch(() => undefined);
       })
       .catch(() => {
         if (mounted.current) setFailed(true);
@@ -59,5 +71,5 @@ export function useWeather(position: GpsPosition | null): WeatherState {
       });
   }, [lat, lon, tick]);
 
-  return { weather, failed };
+  return { weather, place, failed };
 }

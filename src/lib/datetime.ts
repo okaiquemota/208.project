@@ -76,3 +76,24 @@ export function formatDateShort(date: Date): string {
 export function msUntilNextMinute(date: Date): number {
   return 60_000 - (date.getSeconds() * 1000 + date.getMilliseconds());
 }
+
+/** Iniciais dos dias da semana, começando no domingo. */
+export const INICIAIS_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const;
+
+/**
+ * Grade do mês para o widget de calendário: semanas (domingo a sábado),
+ * com null nos espaços antes do dia 1 e depois do último dia.
+ */
+export function monthGrid(date: Date): (number | null)[][] {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}

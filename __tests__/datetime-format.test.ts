@@ -3,6 +3,7 @@ import {
   formatDateLong,
   formatDayMonth,
   formatWeekday,
+  monthGrid,
   formatDateShort,
   msUntilNextMinute,
   pad2,
@@ -87,5 +88,26 @@ describe('data em duas linhas', () => {
     const d = new Date(2026, 10, 5);
     expect(formatWeekday(d)).toBe('quinta-feira');
     expect(formatDayMonth(d)).toBe('5 de novembro');
+  });
+});
+
+describe('calendário do mês', () => {
+  it('novembro de 2026 começa num domingo e tem 30 dias', () => {
+    const weeks = monthGrid(new Date(2026, 10, 6));
+    expect(weeks[0]).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(weeks[4]).toEqual([29, 30, null, null, null, null, null]);
+    expect(weeks).toHaveLength(5);
+  });
+
+  it('fevereiro de 2026 (começa no domingo, 28 dias) cabe em 4 semanas', () => {
+    expect(monthGrid(new Date(2026, 1, 10))).toHaveLength(4);
+  });
+
+  it('meses que começam no sábado precisam de 6 semanas', () => {
+    // Agosto de 2026 começa num sábado e tem 31 dias.
+    const weeks = monthGrid(new Date(2026, 7, 1));
+    expect(weeks[0]).toEqual([null, null, null, null, null, null, 1]);
+    expect(weeks).toHaveLength(6);
+    expect(weeks.every((w) => w.length === 7)).toBe(true);
   });
 });

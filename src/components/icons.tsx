@@ -198,3 +198,10 @@ export function WeatherGlyph({ name, size = 48 }: { name: WeatherIconName; size?
     </Svg>
   );
 }
+
+/** Seta circular (zerar). */
+export const ResetIcon = make(
+  'M12 5V2L7.5 6.5 12 11V7.5a5.5 5.5 0 1 1-5.5 5.5H4a8 8 0 1 0 8-8z',
+);
+/** Calendário. */
+export const CalendarIcon = make('M7 2h2v2h6V2h2v2h3v17H4V4h3zm-1 7v10h12V9z');

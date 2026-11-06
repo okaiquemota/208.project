@@ -8,8 +8,8 @@ import type { TextStyle } from 'react-native';
 
 export const colors = {
   bg: '#000000',
-  /** Fundo dos cards. */
-  card: '#17181C',
+  /** Fundo dos cards: cinza neutro bem escuro, como os widgets do CarPlay. */
+  card: '#151515',
   /** Elementos dentro dos cards (botões secundários, trilhos). */
   fill: 'rgba(255,255,255,0.10)',
   fillPressed: 'rgba(255,255,255,0.22)',
@@ -42,7 +42,7 @@ export const sizes = {
 /** Família da fonte embutida pelo plugin expo-font (app.json). */
 export const FONT = 'Inter';
 
-type Weight = '400' | '500' | '600' | '700' | '800';
+type Weight = '300' | '400' | '500' | '600' | '700' | '800';
 
 /** Estilo de texto padrão: Inter, tamanho, peso e cor. */
 export function font(size: number, weight: Weight = '400', color: string = colors.text): TextStyle {

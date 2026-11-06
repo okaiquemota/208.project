@@ -2,7 +2,7 @@
   "expo": {
     "name": "Painel 208",
     "slug": "painel-208",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "platforms": ["android"],
     "orientation": "landscape",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
     "backgroundColor": "#000000",
     "android": {
       "package": "br.com.movcode.painel208",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -38,6 +38,7 @@
               {
                 "fontFamily": "Inter",
                 "fontDefinitions": [
+                  { "path": "./node_modules/@expo-google-fonts/inter/300Light/Inter_300Light.ttf", "weight": 300 },
                   { "path": "./node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf", "weight": 400 },
                   { "path": "./node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf", "weight": 500 },
                   { "path": "./node_modules/@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf", "weight": 600 },

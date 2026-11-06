@@ -1,4 +1,4 @@
-import { gpsSignalBars, speedLeds, volumeSegments } from '../src/lib/widgets';
+import { dialTicks, gpsSignalBars, speedLeds, volumeSegments } from '../src/lib/widgets';
 
 describe('sinal do GPS em barrinhas', () => {
   it('quanto mais preciso, mais barras', () => {
@@ -53,5 +53,25 @@ describe('segmentos do volume', () => {
 
   it('máximo desconhecido não acende nada', () => {
     expect(volumeSegments(5, 0, 10).filter(Boolean)).toHaveLength(0);
+  });
+});
+
+describe('marcações do velocímetro', () => {
+  // 41 marcações de 0 a 200: uma a cada 5 km/h.
+  it('acende até a velocidade atual (contando a do zero)', () => {
+    expect(dialTicks(0, 200, 120, 41).lit).toBe(0);
+    expect(dialTicks(null, 200, 120, 41).lit).toBe(0);
+    expect(dialTicks(5, 200, 120, 41).lit).toBe(2);
+    expect(dialTicks(87, 200, 120, 41).lit).toBe(18);
+    expect(dialTicks(250, 200, 120, 41).lit).toBe(41);
+  });
+
+  it('as marcações depois de 120 km/h são de alerta', () => {
+    // Marcação 24 = 120 km/h (ainda normal); a 25 (125 km/h) já é alerta.
+    expect(dialTicks(0, 200, 120, 41).alertFrom).toBe(25);
+  });
+
+  it('alerta desligado nunca fica vermelho', () => {
+    expect(dialTicks(180, 200, Number.POSITIVE_INFINITY, 41).alertFrom).toBe(Number.POSITIVE_INFINITY);
   });
 });
