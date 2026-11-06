@@ -7,4 +7,6 @@
 -keep class com.spotify.protocol.** { *; }
 -keep class com.spotify.android.appremote.** { *; }
 -dontwarn com.spotify.**
+# O SDK também traz um conversor opcional em Jackson, que não usamos (usamos Gson).
+-dontwarn com.fasterxml.jackson.**
 -keepattributes Signature, *Annotation*, InnerClasses, EnclosingMethod
