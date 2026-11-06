@@ -71,7 +71,7 @@ export function NextTurnWidget({
         </View>
         {!hasAccess && (
           <Touch onPress={onOpenAccess} accessibilityLabel="Ativar acesso a notificações" style={styles.smallButton}>
-            <Text style={font(13, '800', '#000')}>Ativar</Text>
+            <Text allowFontScaling={false} style={font(13, '800', '#000')}>Ativar</Text>
           </Touch>
         )}
       </View>
@@ -141,7 +141,7 @@ export function MessagesWidget({
         </View>
         {!hasAccess && (
           <Touch onPress={onOpenAccess} accessibilityLabel="Ativar acesso a notificações" style={styles.smallButton}>
-            <Text style={font(13, '800', '#000')}>Ativar</Text>
+            <Text allowFontScaling={false} style={font(13, '800', '#000')}>Ativar</Text>
           </Touch>
         )}
       </View>

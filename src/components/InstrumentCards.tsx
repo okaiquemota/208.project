@@ -183,11 +183,11 @@ function GpsStatus({ gps }: { gps: GpsState }) {
 function Notice({ text, action, onAction }: { text: string; action: string; onAction: () => void }) {
   return (
     <View style={styles.notice}>
-      <Text style={font(15, '600', colors.text)} numberOfLines={2}>
+      <Text allowFontScaling={false} style={font(15, '600', colors.text)} numberOfLines={2}>
         {text}
       </Text>
       <Touch onPress={onAction} accessibilityLabel={action} style={styles.noticeButton}>
-        <Text style={font(15, '700', '#000')}>{action}</Text>
+        <Text allowFontScaling={false} style={font(15, '700', '#000')}>{action}</Text>
       </Touch>
     </View>
   );

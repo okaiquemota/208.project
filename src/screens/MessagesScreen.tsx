@@ -43,15 +43,15 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
     return (
       <View style={[styles.card, styles.center]}>
         {icon ? <Image source={icon} style={styles.bigIcon} contentFit="contain" /> : <ChatIcon size={48} color={colors.text3} />}
-        <Text style={font(20, '800')}>{hasAccess ? 'Nenhuma mensagem nova' : 'Mensagens do WhatsApp'}</Text>
-        <Text style={[font(14, '500', colors.text2), styles.centerText]}>
+        <Text allowFontScaling={false} style={font(20, '800')}>{hasAccess ? 'Nenhuma mensagem nova' : 'Mensagens do WhatsApp'}</Text>
+        <Text allowFontScaling={false} style={[font(14, '500', colors.text2), styles.centerText]}>
           {hasAccess
             ? 'As mensagens novas aparecem aqui, com resposta rápida.'
             : 'Para mostrar as mensagens aqui, libere o acesso a notificações.'}
         </Text>
         {!hasAccess && (
           <Touch onPress={onOpenAccess} accessibilityLabel="Ativar acesso a notificações" style={styles.whiteButton}>
-            <Text style={font(15, '800', '#000')}>Ativar</Text>
+            <Text allowFontScaling={false} style={font(15, '800', '#000')}>Ativar</Text>
           </Touch>
         )}
       </View>
@@ -123,7 +123,7 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
             style={styles.ghostButton}
           >
             <CheckIcon size={18} color={colors.text} />
-            {!compact && <Text style={font(13, '700')}>Lida</Text>}
+            {!compact && <Text allowFontScaling={false} style={font(13, '700')}>Lida</Text>}
           </Touch>
         )}
         <Touch
@@ -131,7 +131,7 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
           accessibilityLabel="Abrir no WhatsApp"
           style={styles.whiteButtonSmall}
         >
-          <Text style={font(13, '800', '#000')}>Abrir</Text>
+          <Text allowFontScaling={false} style={font(13, '800', '#000')}>Abrir</Text>
         </Touch>
       </View>
 
@@ -153,11 +153,11 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
             <Text style={font(16, '500')} allowFontScaling={false}>
               {sent[selected.key]}
             </Text>
-            <Text style={[font(11, '700', 'rgba(255,255,255,0.7)'), styles.sentLabel]}>Enviado ✓</Text>
+            <Text allowFontScaling={false} style={[font(11, '700', 'rgba(255,255,255,0.7)'), styles.sentLabel]}>Enviado ✓</Text>
           </Animated.View>
         ) : null}
         {failed === selected.key ? (
-          <Text style={font(13, '700', colors.orange)}>Não deu para responder daqui. Toque em Abrir.</Text>
+          <Text allowFontScaling={false} style={font(13, '700', colors.orange)}>Não deu para responder daqui. Toque em Abrir.</Text>
         ) : null}
       </ScrollView>
 
@@ -172,7 +172,7 @@ export function MessagesScreen({ notifications, hasAccess, onOpenAccess, icon, c
           ))}
         </View>
       ) : (
-        <Text style={[font(13, '600', colors.text3), styles.noReply]}>
+        <Text allowFontScaling={false} style={[font(13, '600', colors.text3), styles.noReply]}>
           Esta conversa não aceita resposta rápida. Toque em Abrir.
         </Text>
       )}

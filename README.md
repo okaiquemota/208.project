@@ -26,7 +26,7 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 └──────┴──────────────────────────────────┴──────────────┘
 ```
 
-Em **tela dividida com o Waze** (largura menor que 700 dp), o painel vira o lado direito do CarPlay: barra lateral com a velocidade, **próxima curva** em cima (quando há rota) e a **música** embaixo. Veja "Waze + música lado a lado".
+Em **tela dividida com o Waze** (largura menor que 820 dp), o painel vira o lado direito do CarPlay: barra lateral com a velocidade, **próxima curva** em cima (quando há rota) e a **música** embaixo. Veja "Waze + música lado a lado".
 
 ### Widgets da tela de início
 
@@ -318,7 +318,7 @@ O lado JavaScript usa `requireOptionalNativeModule`: se o módulo faltar, devolv
 
 **Movimento.** As animações usam o Reanimated, que roda na thread de interface (fica liso mesmo com o JavaScript ocupado): botões afundam e voltam com mola, o destaque da barra lateral desliza, telas e capas entram em sequência, a barra de progresso anda lisa, a música nova entra deslizando e o coração pulsa ao curtir. Tudo curto (até ~350 ms) para não distrair dirigindo.
 
-**Tela.** Segue o CarPlay/Android Auto: barra lateral preta, cards grandes bem arredondados e a fonte **Inter**, embutida pelo plugin `expo-font`. O fundo é preto porque, em AMOLED, pixel preto fica apagado. Os números usam `tabular-nums` (todos os dígitos com a mesma largura), então "88" → "91" não faz o texto pular. Os botões têm no mínimo 64 dp de área de toque e não há popups, porque é para usar dirigindo. Abaixo de 700 dp de largura (tela dividida), o layout compacto entra sozinho.
+**Tela.** Segue o CarPlay/Android Auto: barra lateral preta, cards grandes bem arredondados e a fonte **Inter**, embutida pelo plugin `expo-font`. O fundo é preto porque, em AMOLED, pixel preto fica apagado. Os números usam `tabular-nums` (todos os dígitos com a mesma largura), então "88" → "91" não faz o texto pular. Os botões têm no mínimo 64 dp de área de toque e não há popups, porque é para usar dirigindo. Abaixo de 820 dp de largura (tela dividida), o layout compacto entra sozinho. O player também se ajusta à largura: os botões encolhem e, se faltar espaço, ficam só anterior, play e próxima.
 
 ## Comandos
 

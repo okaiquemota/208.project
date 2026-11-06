@@ -43,9 +43,11 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={font(26, '800')}>Ajustes</Text>
+        <Text allowFontScaling={false} style={[font(26, '800'), styles.flex1]} numberOfLines={1}>
+          Ajustes
+        </Text>
         <Touch onPress={onDone} accessibilityLabel="Voltar ao início" style={[styles.doneButton, { backgroundColor: accent.main }]}>
-          <Text style={font(15, '800')}>Pronto</Text>
+          <Text allowFontScaling={false} style={font(15, '800')}>Pronto</Text>
         </Touch>
       </View>
 
@@ -83,7 +85,7 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
               </ScrollView>
             </View>
           ))}
-          <Text style={[font(12, '600', colors.text3), styles.hint]}>
+          <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
             Escolher um widget que já está em outra posição troca os dois de lugar.
           </Text>
         </Section>
@@ -106,7 +108,7 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
                 >
                   {settings.accent === id && <CheckIcon size={22} color={colors.text} />}
                 </View>
-                <Text style={font(12, '600', colors.text2)}>{ACCENTS[id].nome}</Text>
+                <Text allowFontScaling={false} style={font(12, '600', colors.text2)}>{ACCENTS[id].nome}</Text>
               </Touch>
             ))}
           </View>
@@ -140,7 +142,7 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
               onPress={() => update((s) => ({ ...s, mapTheme: 'claro' }))}
             />
           </Chips>
-          <Text style={[font(12, '600', colors.text3), styles.hint]}>
+          <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
             Escolha “Mapa ao vivo (Waze)” no card principal. O mapa usa a internet do celular.
           </Text>
         </Section>
@@ -192,7 +194,7 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
           />
         </Section>
 
-        <Text style={[font(12, '600', colors.text3), styles.about]}>{`Painel 208 · versão ${version}`}</Text>
+        <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.about]}>{`Painel 208 · versão ${version}`}</Text>
       </ScrollView>
     </View>
   );
@@ -201,14 +203,14 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={font(18, '800')}>{title}</Text>
+      <Text allowFontScaling={false} style={font(18, '800')}>{title}</Text>
       {children}
     </View>
   );
 }
 
 function Label({ children }: { children: string }) {
-  return <Text style={[font(13, '700', colors.text2), styles.label]}>{children}</Text>;
+  return <Text allowFontScaling={false} style={[font(13, '700', colors.text2), styles.label]}>{children}</Text>;
 }
 
 function Chips({ children }: { children: ReactNode }) {
@@ -247,12 +249,12 @@ function Permission({
     <View style={styles.permission}>
       <View style={[styles.statusDot, { backgroundColor: ok ? colors.green : colors.orange }]} />
       <View style={styles.flex1}>
-        <Text style={font(15, '700')}>{title}</Text>
-        <Text style={font(12, '600', colors.text2)}>{ok ? `Liberado · ${detail}` : detail}</Text>
+        <Text allowFontScaling={false} style={font(15, '700')}>{title}</Text>
+        <Text allowFontScaling={false} style={font(12, '600', colors.text2)}>{ok ? `Liberado · ${detail}` : detail}</Text>
       </View>
       {!ok && (
         <Touch onPress={onAction} accessibilityLabel={action} style={styles.permissionButton}>
-          <Text style={font(14, '800', '#000')}>{action}</Text>
+          <Text allowFontScaling={false} style={font(14, '800', '#000')}>{action}</Text>
         </Touch>
       )}
     </View>

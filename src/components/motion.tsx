@@ -11,7 +11,6 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeInRight,
-  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -34,7 +33,6 @@ export const enterItem = (index: number) => FadeInDown.duration(320).delay(Math.
 
 /** Texto que troca (música nova): entra deslizando da direita. */
 export const enterText = FadeInRight.duration(280);
-export const exitFast = FadeOut.duration(140);
 /** Tela nova (troca de página na barra lateral). */
 export const enterPage = FadeIn.duration(240);
 

@@ -84,7 +84,7 @@ export function WazeMap({ gps, theme, hud }: Props) {
     return (
       <Shell hud={hud}>
         <ActivityIndicator color={colors.text2} />
-        <Text style={[font(15, '600', colors.text2), styles.centerText]}>Esperando o GPS para abrir o mapa…</Text>
+        <Text allowFontScaling={false} style={[font(15, '600', colors.text2), styles.centerText]}>Esperando o GPS para abrir o mapa…</Text>
       </Shell>
     );
   }
@@ -92,8 +92,8 @@ export function WazeMap({ gps, theme, hud }: Props) {
   if (failed) {
     return (
       <Shell hud={hud}>
-        <Text style={[font(16, '700', colors.text), styles.centerText]}>Mapa sem internet</Text>
-        <Text style={[font(13, '500', colors.text2), styles.centerText]}>
+        <Text allowFontScaling={false} style={[font(16, '700', colors.text), styles.centerText]}>Mapa sem internet</Text>
+        <Text allowFontScaling={false} style={[font(13, '500', colors.text2), styles.centerText]}>
           O mapa do Waze precisa de dados móveis ou Wi-Fi.
         </Text>
         <Touch
@@ -105,7 +105,7 @@ export function WazeMap({ gps, theme, hud }: Props) {
           accessibilityLabel="Tentar de novo"
           style={styles.retry}
         >
-          <Text style={font(15, '800', '#000')}>Tentar de novo</Text>
+          <Text allowFontScaling={false} style={font(15, '800', '#000')}>Tentar de novo</Text>
         </Touch>
       </Shell>
     );

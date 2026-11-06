@@ -37,7 +37,7 @@ import {
   VolumeDownIcon,
   VolumeUpIcon,
 } from './icons';
-import { enterText, exitFast, PlayingBars, usePop } from './motion';
+import { enterText, PlayingBars, usePop } from './motion';
 import { Touch } from './Touch';
 
 type Props = {
@@ -110,6 +110,14 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
     ? Math.max(80, Math.min(box.w - PAD * 2, box.h - PAD * 2 - (BOTTOM_BLOCK - 8) - 108, 230))
     : Math.max(90, Math.min(box.h - PAD * 2 - BOTTOM_BLOCK - 10, box.w * (compact ? 0.4 : 0.42), 250));
 
+  // Botões conforme a largura: cabem sempre, sem encavalar.
+  // cheio: 5 botões grandes; médio: 5 menores; pequeno: só anterior/play/próxima.
+  const inner = box.w - PAD * 2;
+  const tier = box.w === 0 || inner >= 330 ? 'cheio' : inner >= 246 ? 'medio' : 'pequeno';
+  const side = tier === 'cheio' ? (vertical ? 52 : 64) : tier === 'medio' ? 46 : 44;
+  const play = tier === 'cheio' ? (vertical ? 64 : 72) : tier === 'medio' ? 60 : 56;
+  const showExtras = tier !== 'pequeno';
+
   const [leftAction, rightAction] = pickSideActions(np?.customActions ?? []);
   const showVolume = compact && !vertical;
 
@@ -162,7 +170,7 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
 
           {/* Player, título e artista */}
           <View style={[styles.info, vertical && styles.infoVertical]}>
-            <View style={styles.source}>
+            <View style={[styles.source, vertical && styles.sourceVertical]}>
               {playerIcon ? (
                 <Image source={playerIcon} style={styles.sourceIcon} contentFit="contain" />
               ) : (
@@ -173,8 +181,8 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
               </Text>
               {hasTrack && <PlayingBars color={ACTIVE_GREEN} playing={media.playing} size={11} />}
             </View>
-            {/* Música nova: título e artista entram deslizando */}
-            <Animated.View key={`${title}|${subtitle}`} entering={enterText} exiting={exitFast}>
+            {/* Música nova: título e artista entram deslizando (o antigo some na hora, sem sobrepor) */}
+            <Animated.View key={`${title}|${subtitle}`} entering={enterText} style={vertical && styles.stretch}>
               <Text
                 style={[font(compact || vertical ? 21 : 28, '800'), vertical && styles.centerText]}
                 numberOfLines={vertical ? 1 : 2}
@@ -216,38 +224,43 @@ export function NowPlayingCard({ media, playerIcon, defaultPlayerName, onOpenPla
         </View>
 
         {/* Controles */}
-        <View style={styles.controls}>
-          {showVolume ? (
-            <SideButton onPress={media.volumeDown} label="Diminuir volume" disabled={!media.available}>
-              <VolumeDownIcon size={28} color={colors.text} />
+        <View style={[styles.controls, !showExtras && styles.controlsCentered]}>
+          {!showExtras ? null : showVolume ? (
+            <SideButton onPress={media.volumeDown} label="Diminuir volume" disabled={!media.available} size={side}>
+              <VolumeDownIcon size={Math.round(side * 0.44)} color={colors.text} />
             </SideButton>
           ) : (
-            <ActionButton action={leftAction} onPress={media.sendAction} small={vertical} />
+            <ActionButton action={leftAction} onPress={media.sendAction} size={side} />
           )}
-          <SideButton onPress={media.previous} label="Música anterior" disabled={!media.available} small={vertical}>
-            <PreviousIcon size={vertical ? 30 : 36} color={colors.text} />
+          <SideButton onPress={media.previous} label="Música anterior" disabled={!media.available} size={side}>
+            <PreviousIcon size={Math.round(side * 0.56)} color={colors.text} />
           </SideButton>
           <Touch
             onPress={media.playPause}
             disabled={!media.available}
             accessibilityLabel={media.playing ? 'Pausar' : 'Tocar'}
             pressScale={0.88}
-            style={[styles.playButton, vertical && styles.playButtonSmall]}
+            visualSize={play}
+            style={[styles.playButton, { width: play, height: play, borderRadius: play / 2 }]}
           >
             {/* Troca play/pause com um "pulo" */}
             <Animated.View key={media.playing ? 'pause' : 'play'} entering={ZoomIn.springify().damping(14)}>
-              {media.playing ? <PauseIcon size={30} color="#000" /> : <PlayIcon size={32} color="#000" />}
+              {media.playing ? (
+                <PauseIcon size={Math.round(play * 0.42)} color="#000" />
+              ) : (
+                <PlayIcon size={Math.round(play * 0.45)} color="#000" />
+              )}
             </Animated.View>
           </Touch>
-          <SideButton onPress={media.next} label="Próxima música" disabled={!media.available} small={vertical}>
-            <NextIcon size={vertical ? 30 : 36} color={colors.text} />
+          <SideButton onPress={media.next} label="Próxima música" disabled={!media.available} size={side}>
+            <NextIcon size={Math.round(side * 0.56)} color={colors.text} />
           </SideButton>
-          {showVolume ? (
-            <SideButton onPress={media.volumeUp} label="Aumentar volume" disabled={!media.available}>
-              <VolumeUpIcon size={28} color={colors.text} />
+          {!showExtras ? null : showVolume ? (
+            <SideButton onPress={media.volumeUp} label="Aumentar volume" disabled={!media.available} size={side}>
+              <VolumeUpIcon size={Math.round(side * 0.44)} color={colors.text} />
             </SideButton>
           ) : (
-            <ActionButton action={rightAction} onPress={media.sendAction} small={vertical} />
+            <ActionButton action={rightAction} onPress={media.sendAction} size={side} />
           )}
         </View>
       </View>
@@ -277,13 +290,13 @@ function SideButton({
   onPress,
   label,
   disabled,
-  small,
+  size,
   children,
 }: {
   onPress: () => void;
   label: string;
   disabled?: boolean;
-  small?: boolean;
+  size: number;
   children: ReactNode;
 }) {
   return (
@@ -291,8 +304,8 @@ function SideButton({
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel={label}
-      visualSize={small ? 52 : undefined}
-      style={[styles.sideButton, small && styles.sideButtonSmall]}
+      visualSize={size}
+      style={[styles.sideButton, { width: size, height: size, borderRadius: size / 2 }]}
     >
       {children}
     </Touch>
@@ -303,33 +316,39 @@ function SideButton({
 function ActionButton({
   action,
   onPress,
-  small,
+  size,
 }: {
   action: PlayerAction | null;
   onPress: (a: string) => void;
-  small?: boolean;
+  size: number;
 }) {
   // Coração/aleatório "pulsam" quando ligam ou desligam.
   const pop = usePop(action?.active);
-  if (!action) return <View style={[styles.sideButton, small && styles.sideButtonSmall]} />;
+  const box = { width: size, height: size, borderRadius: size / 2 };
+  if (!action) return <View style={[styles.sideButton, box]} />;
   const Glyph = action.glyph ? GLYPHS[action.glyph] : null;
   return (
     <Touch
       onPress={() => onPress(action.action)}
       accessibilityLabel={action.name}
-      visualSize={small ? 52 : undefined}
-      style={[styles.sideButton, small && styles.sideButtonSmall]}
+      visualSize={size}
+      style={[styles.sideButton, box]}
     >
       {Glyph ? (
         <>
           <Animated.View style={pop}>
-            <Glyph size={small ? 24 : 28} color={action.active ? ACTIVE_GREEN : colors.text} />
+            <Glyph size={Math.round(size * 0.44)} color={action.active ? ACTIVE_GREEN : colors.text} />
           </Animated.View>
           {/* Pontinho embaixo quando ligado, como no Spotify */}
           {action.active && action.glyph !== 'heart-filled' ? <View style={styles.activeDot} /> : null}
         </>
       ) : action.iconUri ? (
-        <Image source={action.iconUri} style={styles.extraIcon} contentFit="contain" transition={0} />
+        <Image
+          source={action.iconUri}
+          style={{ width: Math.round(size * 0.44), height: Math.round(size * 0.44) }}
+          contentFit="contain"
+          transition={0}
+        />
       ) : (
         <Text style={[font(11, '700', colors.text2), styles.extraText]} numberOfLines={2} allowFontScaling={false}>
           {action.name}
@@ -421,11 +440,18 @@ const styles = StyleSheet.create({
   flexShrink: {
     flexShrink: 1,
   },
+  stretch: {
+    alignSelf: 'stretch',
+  },
   source: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
     marginBottom: 4,
+  },
+  sourceVertical: {
+    maxWidth: '100%',
+    alignSelf: 'center',
   },
   sourceIcon: {
     width: 20,
@@ -481,17 +507,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 4,
   },
+  controlsCentered: {
+    justifyContent: 'center',
+    gap: 14,
+  },
   sideButton: {
     width: sizes.minTouch,
     height: sizes.minTouch,
     borderRadius: sizes.minTouch / 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sideButtonSmall: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
   },
   activeDot: {
     position: 'absolute',
@@ -500,10 +525,6 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: ACTIVE_GREEN,
-  },
-  extraIcon: {
-    width: 28,
-    height: 28,
   },
   extraText: {
     textAlign: 'center',
@@ -515,10 +536,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.text,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  playButtonSmall: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
   },
 });

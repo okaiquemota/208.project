@@ -30,7 +30,7 @@ export function AppGrid({ tiles, columns, emptyText }: Props) {
   if (tiles.length === 0) {
     return (
       <View style={[styles.card, styles.empty]}>
-        <Text style={font(17, '600', colors.text2)}>{emptyText ?? 'Nada para mostrar'}</Text>
+        <Text allowFontScaling={false} style={font(17, '600', colors.text2)}>{emptyText ?? 'Nada para mostrar'}</Text>
       </View>
     );
   }

@@ -55,16 +55,16 @@ export function SpotifyBrowser({ spotify, icon }: Props) {
     return (
       <Animated.View entering={FadeIn.duration(250)} style={styles.center}>
         {icon ? <Image source={icon} style={styles.bigIcon} contentFit="contain" /> : <MusicIcon size={48} color={colors.text2} />}
-        <Text style={[font(15, '600', status === 'erro' ? colors.orange : colors.text2), styles.centerText]}>{text}</Text>
+        <Text allowFontScaling={false} style={[font(15, '600', status === 'erro' ? colors.orange : colors.text2), styles.centerText]}>{text}</Text>
         {status === 'erro' && errorDetail ? (
-          <Text style={[font(11, '500', colors.text3), styles.centerText]} numberOfLines={3} selectable>
+          <Text allowFontScaling={false} style={[font(11, '500', colors.text3), styles.centerText]} numberOfLines={3} selectable>
             {errorDetail}
           </Text>
         ) : null}
         {status === 'conectando' && <ActivityIndicator color={colors.text} />}
         {canConnect && (
           <Touch onPress={() => void spotify.connect()} accessibilityLabel="Conectar ao Spotify" style={styles.connect}>
-            <Text style={font(16, '800', '#000')}>Conectar ao Spotify</Text>
+            <Text allowFontScaling={false} style={font(16, '800', '#000')}>Conectar ao Spotify</Text>
           </Touch>
         )}
       </Animated.View>
@@ -119,7 +119,7 @@ function TabsView({ spotify }: { spotify: SpotifyState }) {
           ),
         )}
         {shelves.length === 0 && !loading && (
-          <Text style={[font(14, '600', colors.text2), styles.empty]}>Nada aqui.</Text>
+          <Text allowFontScaling={false} style={[font(14, '600', colors.text2), styles.empty]}>Nada aqui.</Text>
         )}
       </Animated.ScrollView>
     </View>
@@ -212,9 +212,38 @@ function DetailView({ spotify }: { spotify: SpotifyState }) {
   const detail = spotify.detail!;
   const { item, items } = detail;
   const [width, setWidth] = useState(0);
+  // Tela estreita (tela dividida): capa menor e os botões numa linha própria, embaixo.
+  const narrow = width > 0 && width < 460;
+  // Bem estreita: sem capa, para o título caber.
+  const tiny = width > 0 && width < 330;
   const image = item.image ? (spotify.images[item.image] ?? null) : null;
   const layout = detailLayout(items);
   const player = spotify.player;
+
+  const buttons = item.playable ? (
+    <>
+      <Touch
+        onPress={() => void spotify.playItem(item, false)}
+        accessibilityLabel={`Tocar ${item.title}`}
+        style={[styles.playPill, narrow && styles.pillGrow]}
+      >
+        <PlayIcon size={20} color="#000" />
+        <Text allowFontScaling={false} style={font(15, '800', '#000')}>
+          Tocar
+        </Text>
+      </Touch>
+      <Touch
+        onPress={() => void spotify.playItem(item, true)}
+        accessibilityLabel={`Tocar ${item.title} no aleatório`}
+        style={[styles.shufflePill, narrow && styles.pillGrow]}
+      >
+        <ShuffleIcon size={20} color={SPOTIFY_GREEN} />
+        <Text allowFontScaling={false} style={font(15, '800')}>
+          Aleatório
+        </Text>
+      </Touch>
+    </>
+  ) : null;
 
   return (
     <Animated.View
@@ -227,15 +256,23 @@ function DetailView({ spotify }: { spotify: SpotifyState }) {
         <Touch onPress={spotify.back} accessibilityLabel="Voltar" visualSize={44} style={styles.backButton}>
           <BackIcon size={24} color={colors.text} />
         </Touch>
-        <View style={styles.detailCover}>
-          {image ? (
-            <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
-          ) : (
-            <MusicIcon size={34} color={colors.text3} />
-          )}
-        </View>
+        {!tiny && (
+          <View style={[styles.detailCover, narrow && styles.detailCoverSmall]}>
+            {image ? (
+              <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+            ) : (
+              <MusicIcon size={34} color={colors.text3} />
+            )}
+          </View>
+        )}
         <View style={styles.flex1}>
-          <Text style={font(22, '800')} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} allowFontScaling={false}>
+          <Text
+            style={font(narrow ? 18 : 22, '800')}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            allowFontScaling={false}
+          >
             {item.title}
           </Text>
           {item.subtitle ? (
@@ -243,25 +280,12 @@ function DetailView({ spotify }: { spotify: SpotifyState }) {
               {item.subtitle}
             </Text>
           ) : null}
-          {item.playable && (
-            <View style={styles.detailButtons}>
-              <Touch onPress={() => void spotify.playItem(item, false)} accessibilityLabel={`Tocar ${item.title}`} style={styles.playPill}>
-                <PlayIcon size={20} color="#000" />
-                <Text style={font(15, '800', '#000')}>Tocar</Text>
-              </Touch>
-              <Touch
-                onPress={() => void spotify.playItem(item, true)}
-                accessibilityLabel={`Tocar ${item.title} no aleatório`}
-                style={styles.shufflePill}
-              >
-                <ShuffleIcon size={20} color={SPOTIFY_GREEN} />
-                <Text style={font(15, '800')}>Aleatório</Text>
-              </Touch>
-            </View>
-          )}
+          {!narrow && buttons && <View style={styles.detailButtons}>{buttons}</View>}
         </View>
         {spotify.loading && <ActivityIndicator size="small" color={colors.text2} />}
       </View>
+      {/* Estreita: Tocar e Aleatório numa linha só, dividindo a largura */}
+      {narrow && item.playable && <View style={styles.detailButtonsRow}>{buttons}</View>}
 
       <ScrollView contentContainerStyle={styles.detailList} showsVerticalScrollIndicator={false}>
         {layout === 'capas' ? (
@@ -276,7 +300,7 @@ function DetailView({ spotify }: { spotify: SpotifyState }) {
                     {playing ? (
                       <PlayingBars color={SPOTIFY_GREEN} playing={!player.isPaused} size={16} />
                     ) : (
-                      <Text style={font(14, '600', colors.text3)}>{i + 1}</Text>
+                      <Text allowFontScaling={false} style={font(14, '600', colors.text3)}>{i + 1}</Text>
                     )}
                   </View>
                   <View style={styles.flex1}>
@@ -295,7 +319,7 @@ function DetailView({ spotify }: { spotify: SpotifyState }) {
           })
         )}
         {items.length === 0 && !spotify.loading && (
-          <Text style={[font(14, '600', colors.text2), styles.empty]}>Nada aqui.</Text>
+          <Text allowFontScaling={false} style={[font(14, '600', colors.text2), styles.empty]}>Nada aqui.</Text>
         )}
       </ScrollView>
     </Animated.View>
@@ -431,8 +455,23 @@ const styles = StyleSheet.create({
   },
   detailButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 10,
+  },
+  detailButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: PAD_X,
+    paddingBottom: 10,
+  },
+  pillGrow: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  detailCoverSmall: {
+    width: 72,
+    height: 72,
   },
   playPill: {
     flexDirection: 'row',

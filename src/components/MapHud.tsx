@@ -85,7 +85,7 @@ export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, com
             {waze.icon ? (
               <Image source={waze.icon} style={styles.wazeIcon} contentFit="contain" transition={0} />
             ) : (
-              <Text style={font(12, '800', '#000')}>Waze</Text>
+              <Text allowFontScaling={false} style={font(12, '800', '#000')}>Waze</Text>
             )}
           </Touch>
         )}

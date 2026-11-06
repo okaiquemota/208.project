@@ -60,5 +60,8 @@ export const SPEED_ALERT_KMH = 120;
 /** Fim da escala do velocímetro. */
 export const SPEED_MAX_KMH = 200;
 
-/** Abaixo dessa largura (tela dividida com o Waze) o painel usa o layout compacto. */
-export const COMPACT_BELOW_DP = 700;
+/**
+ * Abaixo dessa largura (tela dividida com o Waze) o painel usa o layout compacto.
+ * A coluna de widgets precisa de ~250 dp; abaixo de 820 ela ficaria apertada.
+ */
+export const COMPACT_BELOW_DP = 820;

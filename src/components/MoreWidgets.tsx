@@ -38,7 +38,7 @@ import {
   PlayIcon,
   WeatherGlyph,
 } from './icons';
-import { enterText, exitFast } from './motion';
+import { enterText } from './motion';
 import { Touch } from './Touch';
 
 /** Tamanho do espaço disponível (para os desenhos se ajustarem ao card). */
@@ -274,7 +274,7 @@ export function MiniPlayerWidget({
               <MusicIcon size={26} color={colors.text2} />
             )}
           </View>
-          <Animated.View key={np?.title ?? 'nada'} entering={enterText} exiting={exitFast} style={styles.flex1}>
+          <Animated.View key={np?.title ?? 'nada'} entering={enterText} style={styles.flex1}>
             <Text style={font(15, '700')} numberOfLines={2} allowFontScaling={false}>
               {np?.title || 'Nada tocando'}
             </Text>
@@ -315,7 +315,7 @@ export function ShortcutsWidget({ apps, onOpen }: { apps: InstalledApp[]; onOpen
   return (
     <View style={[styles.card, styles.shortcuts]}>
       {four.length === 0 ? (
-        <Text style={font(14, '600', colors.text2)}>Nenhum app para mostrar</Text>
+        <Text allowFontScaling={false} style={font(14, '600', colors.text2)}>Nenhum app para mostrar</Text>
       ) : (
         four.map((app) => (
           <Touch
