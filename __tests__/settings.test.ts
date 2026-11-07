@@ -1,4 +1,6 @@
 import {
+  BRIGHTNESS_MIN,
+  stepBrightness,
   DEFAULT_SETTINGS,
   normalizeSide,
   parseSettings,
@@ -62,11 +64,10 @@ describe('configurações: coluna da direita', () => {
     expect(normalizeSide(['viagem', 'volume', 'clima', 'bateria'], 'player')).toEqual(['viagem', 'volume', 'clima']);
   });
 
-  it('mini player não vai pra coluna quando o principal já é o player', () => {
-    expect(normalizeSide(['miniplayer', 'viagem'], 'player')).toEqual([null, 'viagem', null]);
-    expect(normalizeSide(['miniplayer', 'viagem'], 'velocidade')).toEqual(['miniplayer', 'viagem', null]);
-    expect(sideOptions('player')).not.toContain('miniplayer');
-    expect(sideOptions('velocidade')).toContain('miniplayer');
+  it('o player pequeno pode ir para a coluna com qualquer card principal (e vem primeiro na lista)', () => {
+    expect(normalizeSide(['miniplayer', 'viagem'], 'player')).toEqual(['miniplayer', 'viagem', null]);
+    expect(sideOptions('player')[0]).toBe('miniplayer');
+    expect(sideOptions('mapa')).toContain('brilho');
   });
 
   it('colocar um widget que já está em outra posição troca os dois de lugar', () => {
@@ -82,11 +83,11 @@ describe('configurações: coluna da direita', () => {
     expect(setSideWidget(DEFAULT_SETTINGS, 5, 'clima')).toBe(DEFAULT_SETTINGS);
   });
 
-  it('trocar o principal para o player tira o mini player da coluna', () => {
+  it('trocar o principal mantém a coluna', () => {
     const comMini = { ...DEFAULT_SETTINGS, home: { main: 'velocidade' as const, side: ['miniplayer', 'viagem', 'volume'] as const } };
-    const s = setMainWidget({ ...comMini, home: { ...comMini.home, side: [...comMini.home.side] } }, 'player');
-    expect(s.home.main).toBe('player');
-    expect(s.home.side).toEqual([null, 'viagem', 'volume']);
+    const s = setMainWidget({ ...comMini, home: { ...comMini.home, side: [...comMini.home.side] } }, 'mapamusica');
+    expect(s.home.main).toBe('mapamusica');
+    expect(s.home.side).toEqual(['miniplayer', 'viagem', 'volume']);
   });
 });
 
@@ -101,5 +102,26 @@ describe('mapa e widgets novos', () => {
   it('tema do mapa inválido volta ao escuro', () => {
     expect(parseSettings(JSON.stringify({ mapTheme: 'neon' })).mapTheme).toBe('escuro');
     expect(parseSettings(null).mapTheme).toBe('escuro');
+  });
+});
+
+describe('brilho', () => {
+  it('padrão automático; valor salvo entre 10% e 100%', () => {
+    expect(parseSettings(null).brightness).toBe('auto');
+    expect(parseSettings(JSON.stringify({ brightness: 0.6 })).brightness).toBe(0.6);
+    expect(parseSettings(JSON.stringify({ brightness: 0.03 })).brightness).toBe('auto');
+    expect(parseSettings(JSON.stringify({ brightness: 7 })).brightness).toBe('auto');
+    expect(parseSettings(JSON.stringify({ brightness: 'alto' })).brightness).toBe('auto');
+  });
+
+  it('degraus de 10% com limites', () => {
+    expect(stepBrightness(0.5, true)).toBe(0.6);
+    expect(stepBrightness(1, true)).toBe(1);
+    expect(stepBrightness(0.1, false)).toBe(BRIGHTNESS_MIN);
+    expect(stepBrightness(0.33, false)).toBe(0.2);
+  });
+
+  it('"Mapa + música" é um card principal válido', () => {
+    expect(parseSettings(JSON.stringify({ home: { main: 'mapamusica', side: [] } })).home.main).toBe('mapamusica');
   });
 });

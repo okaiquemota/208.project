@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { type LayoutChangeEvent, StyleSheet, Text, Vibration, View } from 'react-native';
 
 import { colors, font, SPEED_MAX_KMH, sizes, tabular } from '../config/theme';
+import type { BrightnessState } from '../hooks/useBrightness';
 import type { GpsState } from '../hooks/useGps';
 import type { MediaState } from '../hooks/useMedia';
 import { formatDuration, formatKm, formatKmh } from '../lib/format';
@@ -17,7 +18,7 @@ import { averageKmh } from '../lib/trip';
 import { dialTicks, gpsSignalBars, volumeSegments } from '../lib/widgets';
 import { useAccent, useSettings } from '../state/settings';
 import { TickDial } from './Dials';
-import { NavArrowIcon, ResetIcon, SignalBars, VolumeDownIcon, VolumeUpIcon } from './icons';
+import { NavArrowIcon, ResetIcon, SignalBars, SunHighIcon, SunLowIcon, VolumeDownIcon, VolumeUpIcon } from './icons';
 import { Touch } from './Touch';
 
 /** Tamanho do espaço disponível (para os desenhos se ajustarem ao card). */
@@ -304,7 +305,62 @@ export function VolumeWidget({ media }: { media: MediaState }) {
   );
 }
 
+// ---------- Brilho da tela ----------
+
+const BRIGHTNESS_STEPS = 10;
+
+/** Brilho do painel: "A" (automático, o do celular), − , barrinhas e +. */
+export function BrightnessWidget({ brightness }: { brightness: BrightnessState }) {
+  const auto = brightness.value === 'auto';
+  const on = Math.round(brightness.level * BRIGHTNESS_STEPS);
+  return (
+    <View style={[styles.card, styles.volumeCard]}>
+      <Touch
+        onPress={() => brightness.set('auto')}
+        accessibilityLabel="Brilho automático"
+        visualSize={40}
+        style={[styles.autoChip, auto && styles.autoChipOn]}
+      >
+        <Text allowFontScaling={false} style={font(13, '800', auto ? '#000' : colors.text2)}>
+          A
+        </Text>
+      </Touch>
+      <Touch onPress={() => brightness.step(false)} accessibilityLabel="Diminuir brilho" visualSize={48} style={styles.volumeButton}>
+        <SunLowIcon size={22} color={colors.text} />
+      </Touch>
+      <View style={styles.volumeBars} accessibilityLabel={auto ? 'Brilho automático' : `Brilho ${on * 10}%`}>
+        {Array.from({ length: BRIGHTNESS_STEPS }, (_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.volumeBar,
+              {
+                height: 8 + (i / (BRIGHTNESS_STEPS - 1)) * 18,
+                backgroundColor: i < on ? (auto ? 'rgba(255,255,255,0.45)' : colors.text) : 'rgba(255,255,255,0.14)',
+              },
+            ]}
+          />
+        ))}
+      </View>
+      <Touch onPress={() => brightness.step(true)} accessibilityLabel="Aumentar brilho" visualSize={48} style={styles.volumeButton}>
+        <SunHighIcon size={26} color={colors.text} />
+      </Touch>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  autoChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.fill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  autoChipOn: {
+    backgroundColor: colors.text,
+  },
   card: {
     flex: 1,
     minHeight: 0,

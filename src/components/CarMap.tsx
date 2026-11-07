@@ -2,7 +2,8 @@
 // OpenFreeMap, sem chave):
 // - câmera inclinada que segue o carro e gira com a direção (o carro sempre
 //   "para cima"), deslizando entre uma leitura do GPS e outra;
-// - zoom pela velocidade (de perto na cidade, aberto na estrada);
+// - direção pelo próprio deslocamento (o carro nunca parece andar de lado);
+// - zoom pela velocidade (bem de perto na cidade, aberto na estrada);
 // - prédios em 3D, nomes de ruas e bairros em português;
 // - por cima: próxima curva, chegada, velocidade, Waze, zoom e 3D/2D.
 // O mapa não arrasta com o dedo (o carro fica sempre no lugar); os botões
@@ -19,10 +20,11 @@ import {
   CAR_Y,
   carMapStyle,
   clampZoomOffset,
+  initialCourse,
   type MapTheme,
-  nextBearing,
   PALETTES,
   PITCH_3D,
+  updateCourse,
   zoomForSpeed,
 } from '../lib/carMap';
 import { CarArrow } from './CarArrow';
@@ -37,7 +39,7 @@ type Props = {
 
 /** Centro inicial antes do GPS (Praça da Sé, São Paulo). */
 const FALLBACK: [number, number] = [-46.6339, -23.5503];
-const ARROW = 46;
+const ARROW = 56;
 
 export function CarMap({ gps, theme, hud }: Props) {
   const [height, setHeight] = useState(0);
@@ -47,13 +49,14 @@ export function CarMap({ gps, theme, hud }: Props) {
   const style = useMemo(() => carMapStyle(theme) as unknown as MapProps['mapStyle'], [theme]);
 
   const speed = gps.status === 'ok' ? gps.trip.speedKmh : 0;
-  const heading = gps.status === 'ok' ? gps.trip.headingDeg : null;
-  // Direção: segue o GPS andando; parado, fica onde estava (sem girar no semáforo).
-  const [bearing, setBearing] = useState(heading ?? 0);
-  const next = nextBearing(bearing, heading, speed);
-  if (next !== bearing) setBearing(next);
-
   const pos = gps.position;
+  // Direção pelo deslocamento do carro (o mapa anda sempre "para cima", sem o
+  // carro parecer andar de lado); parado, o mapa não gira.
+  const [course, setCourse] = useState(() => initialCourse(gps.status === 'ok' ? gps.trip.headingDeg : null));
+  const nextCourse = updateCourse(course, pos);
+  if (nextCourse !== course) setCourse(nextCourse);
+  const bearing = nextCourse.bearing;
+
   const center: [number, number] = pos ? [pos.longitude, pos.latitude] : FALLBACK;
 
   const onLayout = (e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height);

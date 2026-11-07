@@ -21,6 +21,7 @@ import { CAR_APPS } from '../config/apps';
 import { SPOTIFY_PACKAGE } from '../config/spotify';
 import { colors, COMPACT_BELOW_DP, sizes } from '../config/theme';
 import { type BatteryInfo, useBattery } from '../hooks/useBattery';
+import { type BrightnessState, useBrightness } from '../hooks/useBrightness';
 import { type CarNotificationsState, useCarNotifications } from '../hooks/useCarNotifications';
 import { useBurnInShift } from '../hooks/useBurnInShift';
 import { useClock } from '../hooks/useClock';
@@ -55,6 +56,8 @@ export function DashboardScreen() {
   const notifications = useCarNotifications();
   // Waze + painel lado a lado com um toque.
   const split = useSplitScreen();
+  // Brilho da tela do painel (aplicado enquanto ele está aberto).
+  const brightness = useBrightness();
   const shortcuts = useInstalledApps(CAR_APPS);
   const shift = useBurnInShift();
   // Furo da câmera (Infinity-O) e afins: o conteúdo não fica embaixo dele.
@@ -70,6 +73,7 @@ export function DashboardScreen() {
       spotify={spotify}
       notifications={notifications}
       split={split}
+      brightness={brightness}
       shortcuts={shortcuts}
       shift={shift}
       insets={insets}
@@ -86,6 +90,7 @@ export type DashboardViewProps = {
   spotify: SpotifyState;
   notifications: CarNotificationsState;
   split: SplitScreenState;
+  brightness: BrightnessState;
   shortcuts: { apps: InstalledApp[]; loading: boolean; open: (pkg: string) => void };
   shift: Offset;
   insets: EdgeInsets;
@@ -103,6 +108,7 @@ export function DashboardView({
   spotify,
   notifications,
   split,
+  brightness,
   shortcuts,
   shift,
   insets,
@@ -207,7 +213,9 @@ export function DashboardView({
       content = <AppGrid tiles={tiles} columns={compact ? 3 : 5} />;
       break;
     case 'ajustes':
-      content = <SettingsScreen gps={gps} media={media} split={split} onDone={() => setPage('inicio')} />;
+      content = (
+        <SettingsScreen gps={gps} media={media} split={split} brightness={brightness} onDone={() => setPage('inicio')} />
+      );
       break;
     case 'mensagens':
       content = (
@@ -238,6 +246,7 @@ export function DashboardView({
           onOpenAccess={media.openAccessSettings}
           onOpenMessages={() => setPage('mensagens')}
           waze={wazeActions}
+          brightness={brightness}
           whatsappIcon={whatsapp?.icon ?? null}
           compact={compact}
         />

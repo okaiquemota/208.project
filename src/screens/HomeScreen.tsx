@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { MessagesWidget, NextTurnWidget } from '../components/CarNotificationWidgets';
-import { SpeedWidget, TripWidget, VolumeWidget } from '../components/InstrumentCards';
+import { BrightnessWidget, SpeedWidget, TripWidget, VolumeWidget } from '../components/InstrumentCards';
 import {
   BatteryWidget,
   CalendarWidget,
@@ -21,6 +21,7 @@ import type { WazeActions } from '../components/MapHud';
 import { CarMap } from '../components/CarMap';
 import { sizes } from '../config/theme';
 import type { BatteryInfo } from '../hooks/useBattery';
+import type { BrightnessState } from '../hooks/useBrightness';
 import type { CarNotificationsState } from '../hooks/useCarNotifications';
 import type { GpsState } from '../hooks/useGps';
 import type { InstalledApp } from '../hooks/useInstalledApps';
@@ -49,6 +50,7 @@ export type HomeProps = {
   onOpenMessages: () => void;
   /** Botões do Waze de verdade no mapa (null se não estiver instalado). */
   waze: WazeActions | null;
+  brightness: BrightnessState;
   whatsappIcon: string | null;
   compact: boolean;
 };
@@ -57,23 +59,28 @@ export function HomeScreen(props: HomeProps) {
   const { settings } = useSettings();
   const { main, side } = settings.home;
 
+  const map = (narrow: boolean) => (
+    <CarMap
+      gps={props.gps}
+      theme={settings.mapTheme}
+      hud={{
+        nav: props.notifications.navigation,
+        onOpenNav: props.notifications.open,
+        speedKmh: props.gps.status === 'ok' ? props.gps.trip.speedKmh : null,
+        speedAlertKmh: settings.speedAlertKmh,
+        waze: props.waze,
+        now: props.now.getTime(),
+        compact: narrow,
+        showSpeed: !props.compact,
+      }}
+    />
+  );
+
   const mainCard =
     main === 'velocidade' ? (
       <SpeedWidget gps={props.gps} large />
     ) : main === 'mapa' ? (
-      <CarMap
-        gps={props.gps}
-        theme={settings.mapTheme}
-        hud={{
-          nav: props.notifications.navigation,
-          onOpenNav: props.notifications.open,
-          speedKmh: props.gps.status === 'ok' ? props.gps.trip.speedKmh : null,
-          speedAlertKmh: settings.speedAlertKmh,
-          waze: props.waze,
-          now: props.now.getTime(),
-          compact: props.compact,
-        }}
-      />
+      map(props.compact)
     ) : (
       <NowPlayingCard
         media={props.media}
@@ -87,7 +94,6 @@ export function HomeScreen(props: HomeProps) {
   // Posições vazias somem: os outros widgets crescem para ocupar o espaço.
   const widgets = side.filter((w): w is SideWidgetId => w !== null);
 
-  // Tela dividida (Waze ao lado) ou coluna toda vazia: só o card principal.
   // Tela dividida (Waze do outro lado): como o painel do CarPlay, a próxima
   // curva em cima (quando há rota) e a música embaixo.
   if (props.compact) {
@@ -118,6 +124,27 @@ export function HomeScreen(props: HomeProps) {
           )}
         </Animated.View>
       </View>
+    );
+  }
+
+  // Metade mapa, metade música (como o painel do CarPlay): mapa 3D à
+  // esquerda, perto do motorista, e o player à direita. Sem a coluna de widgets.
+  if (main === 'mapamusica') {
+    return (
+      <>
+        <Animated.View entering={enterItem(0)} style={styles.half}>
+          {map(true)}
+        </Animated.View>
+        <Animated.View entering={enterItem(1)} style={styles.half}>
+          <NowPlayingCard
+            media={props.media}
+            playerIcon={props.playerIcon}
+            defaultPlayerName={props.defaultPlayerName}
+            onOpenPlayer={props.onOpenPlayer}
+            layout="vertical"
+          />
+        </Animated.View>
+      </>
     );
   }
 
@@ -153,6 +180,8 @@ function renderSideWidget(id: SideWidgetId, p: HomeProps) {
       return <TripWidget gps={p.gps} />;
     case 'volume':
       return <VolumeWidget media={p.media} />;
+    case 'brilho':
+      return <BrightnessWidget brightness={p.brightness} />;
     case 'relogio':
       return <ClockWidget />;
     case 'calendario':
@@ -192,6 +221,9 @@ function renderSideWidget(id: SideWidgetId, p: HomeProps) {
 
 const styles = StyleSheet.create({
   full: {
+    flex: 1,
+  },
+  half: {
     flex: 1,
   },
   dashboard: {

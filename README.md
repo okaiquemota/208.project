@@ -8,11 +8,11 @@ Pacote: `br.com.movcode.painel208` · Expo SDK 58 + TypeScript · development bu
 
 | Tela | O que tem |
 | --- | --- |
-| **Início** | Tela modular: um card principal (player, **mapa 3D** ou velocidade grande) e uma coluna com até 3 widgets, escolhidos nos Ajustes. |
+| **Início** | Tela modular: **Mapa + música** (metade mapa 3D, metade player, como o painel do CarPlay) ou um card principal (player, mapa 3D ou velocidade grande) com uma coluna de até 3 widgets, escolhidos nos Ajustes. |
 | **Música** | O player em coluna e, ao lado, a **escolha de música no Spotify** no estilo do Spotify no CarPlay: abas das seções do Spotify, fileiras de capas grandes e a playlist aberta com **Tocar**, **Aleatório** e a lista de músicas. O que está tocando aparece em verde com barrinhas animadas. |
 | **Apps** | Grade de ícones grandes: os apps da lista do `app.json`, os apps de música achados sozinhos e o atalho **Ajustes**. |
 | **Mensagens** | Conversas novas do WhatsApp: lista à esquerda, conversa aberta à direita, com respostas rápidas de um toque. Abre pelo ícone do WhatsApp na barra lateral (com o número de conversas novas) ou pelo widget. |
-| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, cores do mapa, alerta de velocidade e permissões. Tudo fica salvo no celular. |
+| **Ajustes** | Montar a tela de início, cor de destaque, fundo da tela, brilho da tela, cores do mapa, alerta de velocidade e permissões. Tudo fica salvo no celular. |
 
 ```
 ┌──────┬──────────────────────────────────┬──────────────┐
@@ -42,7 +42,8 @@ Desenhados a partir dos widgets do CarPlay (iOS 26) e do Android Auto, e do pain
 | **Bateria** | Anel de carga (verde carregando, laranja com USB fraca), porcentagem e situação. |
 | **Clima** | Cidade, temperatura grande, tempo e máx./mín. do dia ([Open-Meteo](https://open-meteo.com), gratuito, sem cadastro). Atualiza a cada 20 min ou a cada ~10 km. Precisa de internet. |
 | **Bússola** | Rosa dos ventos que gira com o carro, direção em graus e altitude. |
-| **Mini player** | A música atual em tamanho pequeno (quando o card principal é a velocidade). |
+| **Player de música** | A música atual em tamanho pequeno, com tocar/pausar e próxima. Pode ficar na coluna junto com qualquer card principal. |
+| **Brilho** | Brilho da tela do painel: **A** (automático, o do celular), − e +. Vale só com o painel aberto. |
 | **Atalhos** | Quatro apps de acesso rápido. |
 | **Próxima curva** | Seta, distância e rua da próxima manobra do Waze ou do Maps, lidas da notificação do app de navegação. Tocar volta para a rota no app. |
 | **WhatsApp** | A última mensagem (foto, nome, horário) e quantas outras conversas têm mensagem nova. Tocar abre a tela Mensagens. |
@@ -60,11 +61,11 @@ Escolher "Nenhum" numa posição faz os outros widgets crescerem para ocupar o e
 
 ### Mapa 3D
 
-Escolha **Mapa 3D** como card principal nos Ajustes. É um mapa nativo do próprio painel ([MapLibre](https://maplibre.org) com os mapas gratuitos do [OpenFreeMap](https://openfreemap.org), dados do OpenStreetMap; sem chave e sem cadastro), no estilo do Waze no CarPlay:
+Escolha **Mapa + música** (metade mapa, metade player) ou **Mapa 3D** como card principal nos Ajustes. É um mapa nativo do próprio painel ([MapLibre](https://maplibre.org) com os mapas gratuitos do [OpenFreeMap](https://openfreemap.org), dados do OpenStreetMap; sem chave e sem cadastro), no estilo do Waze no CarPlay:
 
 - **3D**: câmera inclinada, prédios em 3D (mais baixos e translúcidos, para não tapar as ruas) e o botão **2D/3D**;
-- **segue o carro e gira com ele**: a seta fica sempre no mesmo lugar, apontando para frente, e o mapa desliza por baixo a cada leitura do GPS. Parado, o mapa não gira;
-- **zoom pela velocidade**: de perto na cidade, mais aberto na estrada. Os botões **+/−** ajustam;
+- **segue o carro e gira com ele**: a seta 3D fica sempre no mesmo lugar, apontando para frente, e o mapa desliza por baixo a cada leitura do GPS. A direção vem do **próprio deslocamento do carro** (de onde estava para onde foi, a cada 6 m), suavizada; assim o carro nunca parece andar de lado, mesmo quando a bússola do GPS atrasa nas curvas. Parado, o mapa não gira;
+- **zoom pela velocidade**: bem de perto na cidade, mais aberto na estrada. Os botões **+/−** ajustam;
 - **visual noturno** cinza com ruas mais claras conforme a importância, nomes de ruas e bairros em português, sem ícones de lojas poluindo (nos Ajustes há a versão clara, de dia);
 - **próxima curva** (seta, distância e rua) e, embaixo, **chegada, minutos e km**, quando há rota no Waze ou no Maps;
 - **velocidade** num círculo (fica vermelha acima do alerta);
@@ -295,7 +296,7 @@ __tests__/                testes (Jest)
 - **`settings.ts`**: os ajustes (widgets da tela de início, cor, alerta, player). Valida o que está salvo: um ajuste corrompido volta ao padrão em vez de derrubar o app. Escolher um widget que já está em outra posição troca os dois de lugar.
 - **`spotify.ts`**: confere as listas que vêm do Spotify e traduz os erros dele para mensagens em português que dizem o que fazer.
 - **`spotifyPlayer.ts`**: o estado do player do Spotify (música, curtida, aleatório, repetir), os botões dele e a regra de quando o card usa o Spotify direto ou a sessão de mídia do Android.
-- **`carMap.ts`**: o estilo do mapa 3D (cores do tema, largura de cada tipo de rua por zoom, prédios 3D, nomes em português) e as contas da câmera: zoom pela velocidade (17,3 parado → 15,5 a 120 km/h), direção (segue o GPS andando, fica parada abaixo de 5 km/h) e o espaço em cima que põe o carro a 70% da altura da tela.
+- **`carMap.ts`**: o estilo do mapa 3D (cores do tema, largura de cada tipo de rua por zoom, prédios 3D, nomes em português) e as contas da câmera: zoom pela velocidade (18,2 parado → 16,6 a 120 km/h), direção pelo deslocamento (a cada 6 m, girando 65% da diferença por leitura e sempre pelo lado mais curto) e o espaço em cima que põe o carro a 70% da altura da tela.
 - **`waze.ts`**: os links oficiais do Waze que começam a rota para Casa ou Trabalho.
 - **`navigation.ts`**: entende a notificação do app de navegação. Cada app escreve de um jeito ("300 m" no título e a rua no texto, ou "Vire à direita em 300 m"), então ela procura a distância em qualquer campo e usa o resto como instrução. Sem distância (ex.: "Waze em execução"), não é curva. Também separa a rua e tira chegada/minutos/km da linha de resumo.
 - **`messages.ts`**: valida as conversas do WhatsApp, o horário curto ("agora", "5 min", "ontem") e as respostas rápidas.

@@ -35,7 +35,10 @@ export type MapHudProps = {
   speedAlertKmh: number;
   waze: WazeActions | null;
   now: number;
+  /** Mapa estreito: card da curva menor. */
   compact: boolean;
+  /** Mostra a velocidade no círculo (padrão: fora do modo compacto; na tela dividida ela já está na barra lateral). */
+  showSpeed?: boolean;
   /** Botões do mapa: zoom e 3D/2D (só no mapa nativo). */
   controls?: {
     mode: '3d' | '2d';
@@ -47,7 +50,7 @@ export type MapHudProps = {
 
 const PANEL = 'rgba(0,0,0,0.88)';
 
-export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, compact, controls }: MapHudProps) {
+export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, compact, showSpeed = !compact, controls }: MapHudProps) {
   const summary = nav ? parseTripSummary(nav.detail, now) : null;
   const alert = speedKmh != null && speedAlertKmh > 0 && speedKmh > speedAlertKmh;
 
@@ -77,7 +80,7 @@ export function MapHud({ nav, onOpenNav, speedKmh, speedAlertKmh, waze, now, com
       {/* Velocidade e botão do Waze */}
       <View style={styles.right} pointerEvents="box-none">
         {/* Na tela dividida a velocidade já está na barra lateral. */}
-        {!compact && (
+        {showSpeed && (
           <View style={[styles.speed, alert && styles.speedAlert]}>
             <Text style={[font(24, '800', alert ? colors.red : colors.text), tabular]} allowFontScaling={false}>
               {speedKmh == null ? '--' : formatKmh(speedKmh)}

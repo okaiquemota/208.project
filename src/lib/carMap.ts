@@ -198,20 +198,70 @@ export const CAR_Y = 0.7;
 export const ZOOM_OFFSET_MIN = -3;
 export const ZOOM_OFFSET_MAX = 2;
 
-/** Zoom pela velocidade: de perto na cidade, mais aberto na estrada. */
+/** Zoom pela velocidade: bem de perto na cidade, mais aberto na estrada. */
 export function zoomForSpeed(kmh: number): number {
   const s = Math.max(0, Math.min(120, Number.isFinite(kmh) ? kmh : 0));
-  // 0 km/h → 17,3 · 120 km/h → 15,5
-  return Math.round((17.3 - (s / 120) * 1.8) * 100) / 100;
+  // 0 km/h → 18,2 · 120 km/h → 16,6
+  return Math.round((18.2 - (s / 120) * 1.6) * 100) / 100;
+}
+
+// ---------- Direção do mapa ----------
+// O mapa gira para o carro andar sempre "para cima". A direção vem do
+// próprio deslocamento (de onde o carro estava para onde foi), que é sempre
+// coerente com o movimento do mapa; a bússola do GPS atrasa nas curvas e
+// faz o carro parecer andar de lado.
+
+/** Andou pelo menos isso desde o último ponto: calcula a direção. */
+export const COURSE_MIN_M = 6;
+/** Quanto da diferença a direção anda por leitura (suaviza sem atrasar muito). */
+export const COURSE_SMOOTH = 0.65;
+
+export type CourseState = {
+  /** Último ponto usado para medir o deslocamento. */
+  anchor: LatLng | null;
+  /** Direção da câmera em graus, sem "dar a volta" (pode passar de 360 ou ficar negativa). */
+  bearing: number;
+};
+
+type LatLng = { latitude: number; longitude: number };
+
+const RAD = Math.PI / 180;
+
+function metersBetween(a: LatLng, b: LatLng): number {
+  const dLat = (b.latitude - a.latitude) * RAD;
+  const dLon = (b.longitude - a.longitude) * RAD;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.latitude * RAD) * Math.cos(b.latitude * RAD) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function bearingBetween(a: LatLng, b: LatLng): number {
+  const y = Math.sin((b.longitude - a.longitude) * RAD) * Math.cos(b.latitude * RAD);
+  const x =
+    Math.cos(a.latitude * RAD) * Math.sin(b.latitude * RAD) -
+    Math.sin(a.latitude * RAD) * Math.cos(b.latitude * RAD) * Math.cos((b.longitude - a.longitude) * RAD);
+  return ((Math.atan2(y, x) / RAD) % 360 + 360) % 360;
+}
+
+/** Menor diferença entre dois ângulos (−180 a 180). */
+export function angleDelta(from: number, to: number): number {
+  return ((((to - from) % 360) + 540) % 360) - 180;
+}
+
+export function initialCourse(heading: number | null | undefined): CourseState {
+  return { anchor: null, bearing: heading != null && Number.isFinite(heading) ? heading : 0 };
 }
 
 /**
- * Direção da câmera: segue o rumo do GPS andando; parado (ou sem rumo),
- * mantém a última, para o mapa não girar à toa no semáforo.
+ * Atualiza a direção com uma posição nova. Devolve o MESMO objeto quando
+ * nada muda (parado ou andou pouco), para a tela não redesenhar à toa.
  */
-export function nextBearing(previous: number, headingDeg: number | null | undefined, kmh: number): number {
-  if (headingDeg == null || !Number.isFinite(headingDeg) || kmh < 5) return previous;
-  return ((headingDeg % 360) + 360) % 360;
+export function updateCourse(state: CourseState, pos: LatLng | null): CourseState {
+  if (!pos) return state;
+  if (!state.anchor) return { ...state, anchor: pos };
+  if (metersBetween(state.anchor, pos) < COURSE_MIN_M) return state;
+  const target = bearingBetween(state.anchor, pos);
+  const bearing = state.bearing + COURSE_SMOOTH * angleDelta(state.bearing, target);
+  return { anchor: pos, bearing: Math.round(bearing * 10) / 10 };
 }
 
 /**

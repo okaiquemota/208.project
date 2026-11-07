@@ -11,6 +11,7 @@ import { Touch } from '../components/Touch';
 import { colors, font, sizes } from '../config/theme';
 import type { GpsState } from '../hooks/useGps';
 import type { MediaState } from '../hooks/useMedia';
+import type { BrightnessState } from '../hooks/useBrightness';
 import type { SplitScreenState } from '../hooks/useSplitScreen';
 import {
   ACCENTS,
@@ -22,6 +23,7 @@ import {
   SIDE_SLOTS,
   sideOptions,
   SPEED_ALERT_OPTIONS,
+  BRIGHTNESS_OPTIONS,
   WIDGET_INFO,
 } from '../lib/settings';
 import { useAccent, useSettings } from '../state/settings';
@@ -30,10 +32,11 @@ type Props = {
   gps: GpsState;
   media: MediaState;
   split: SplitScreenState;
+  brightness: BrightnessState;
   onDone: () => void;
 };
 
-export function SettingsScreen({ gps, media, split, onDone }: Props) {
+export function SettingsScreen({ gps, media, split, brightness, onDone }: Props) {
   const { settings, update } = useSettings();
   const accent = useAccent();
   const { main, side } = settings.home;
@@ -65,7 +68,12 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
             ))}
           </Chips>
 
-          {Array.from({ length: SIDE_SLOTS }, (_, i) => (
+          {main === 'mapamusica' ? (
+            <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
+              No modo Mapa + música a tela fica dividida entre o mapa e o player, sem a coluna de widgets.
+            </Text>
+          ) : null}
+          {main !== 'mapamusica' && Array.from({ length: SIDE_SLOTS }, (_, i) => (
             <View key={i}>
               <Label>{`Coluna da direita · ${i + 1}º widget`}</Label>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
@@ -85,9 +93,11 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
               </ScrollView>
             </View>
           ))}
-          <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
-            Escolher um widget que já está em outra posição troca os dois de lugar.
-          </Text>
+          {main !== 'mapamusica' && (
+            <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
+              Escolher um widget que já está em outra posição troca os dois de lugar.
+            </Text>
+          )}
         </Section>
 
         <Section title="Cor de destaque">
@@ -127,6 +137,22 @@ export function SettingsScreen({ gps, media, split, onDone }: Props) {
               onPress={() => update((s) => ({ ...s, background: 'preto' }))}
             />
           </Chips>
+        </Section>
+
+        <Section title="Brilho da tela">
+          <Chips>
+            {BRIGHTNESS_OPTIONS.map((b) => (
+              <Chip
+                key={String(b)}
+                label={b === 'auto' ? 'Automático' : `${Math.round(b * 100)}%`}
+                selected={brightness.value === b}
+                onPress={() => brightness.set(b)}
+              />
+            ))}
+          </Chips>
+          <Text allowFontScaling={false} style={[font(12, '600', colors.text3), styles.hint]}>
+            Vale só com o painel aberto. Para ajustar dirigindo, coloque o widget “Brilho” na tela de início.
+          </Text>
         </Section>
 
         <Section title="Mapa 3D">

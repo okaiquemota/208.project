@@ -1,10 +1,12 @@
 import {
+  angleDelta,
   CAR_Y,
   cameraPaddingTop,
   carMapStyle,
   clampZoomOffset,
-  nextBearing,
+  initialCourse,
   PALETTES,
+  updateCourse,
   zoomForSpeed,
 } from '../src/lib/carMap';
 
@@ -34,21 +36,13 @@ describe('carMapStyle', () => {
 });
 
 describe('câmera', () => {
-  it('zoom diminui com a velocidade e fica nos limites', () => {
-    expect(zoomForSpeed(0)).toBe(17.3);
-    expect(zoomForSpeed(60)).toBeCloseTo(16.4, 5);
-    expect(zoomForSpeed(120)).toBe(15.5);
-    expect(zoomForSpeed(200)).toBe(15.5);
-    expect(zoomForSpeed(-5)).toBe(17.3);
-    expect(zoomForSpeed(Number.NaN)).toBe(17.3);
-  });
-
-  it('direção: segue o GPS andando; parado mantém a anterior', () => {
-    expect(nextBearing(10, 90, 40)).toBe(90);
-    expect(nextBearing(10, 90, 2)).toBe(10);
-    expect(nextBearing(10, null, 40)).toBe(10);
-    expect(nextBearing(0, -90, 40)).toBe(270);
-    expect(nextBearing(0, 450, 40)).toBe(90);
+  it('zoom (de perto) diminui com a velocidade e fica nos limites', () => {
+    expect(zoomForSpeed(0)).toBe(18.2);
+    expect(zoomForSpeed(60)).toBeCloseTo(17.4, 5);
+    expect(zoomForSpeed(120)).toBe(16.6);
+    expect(zoomForSpeed(200)).toBe(16.6);
+    expect(zoomForSpeed(-5)).toBe(18.2);
+    expect(zoomForSpeed(Number.NaN)).toBe(18.2);
   });
 
   it('espaço em cima põe o carro abaixo do meio', () => {
@@ -61,5 +55,42 @@ describe('câmera', () => {
     expect(clampZoomOffset(5)).toBe(2);
     expect(clampZoomOffset(-9)).toBe(-3);
     expect(clampZoomOffset(1)).toBe(1);
+  });
+});
+
+describe('direção pelo deslocamento', () => {
+  const base = { latitude: -23.55, longitude: -46.63 };
+  // ~0,00009° de latitude ≈ 10 m
+  const norte = { latitude: base.latitude + 0.00009, longitude: base.longitude };
+  const leste = { latitude: base.latitude, longitude: base.longitude + 0.0001 };
+
+  it('primeiro ponto só vira referência', () => {
+    const c = updateCourse(initialCourse(null), base);
+    expect(c.anchor).toEqual(base);
+    expect(c.bearing).toBe(0);
+  });
+
+  it('andou para o leste: gira para lá (suave)', () => {
+    let c = updateCourse(initialCourse(0), base);
+    c = updateCourse(c, leste);
+    expect(c.bearing).toBeGreaterThan(50);
+    expect(c.bearing).toBeLessThan(70);
+    const again = updateCourse(c, { latitude: leste.latitude, longitude: leste.longitude + 0.0001 });
+    expect(again.bearing).toBeGreaterThan(c.bearing);
+  });
+
+  it('parado ou andou pouco (< 6 m): não gira e devolve o mesmo objeto', () => {
+    const c = updateCourse(updateCourse(initialCourse(30), base), norte);
+    const quase = { latitude: norte.latitude + 0.00002, longitude: norte.longitude };
+    expect(updateCourse(c, quase)).toBe(c);
+    expect(updateCourse(c, null)).toBe(c);
+  });
+
+  it('vira pelo lado mais curto (350° → 10° passa pelo norte)', () => {
+    const c = { anchor: base, bearing: 350 };
+    const next = updateCourse(c, norte); // alvo 0°
+    expect(next.bearing).toBeGreaterThan(350);
+    expect(angleDelta(350, 10)).toBe(20);
+    expect(angleDelta(10, 350)).toBe(-20);
   });
 });
